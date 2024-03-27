@@ -1,16 +1,83 @@
 ---
+import "normalize.css";
+import "magick.css";
 
+import Base from "../Layouts/Base.astro";
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Base title="MagicSnap">
+	<section>
+		<p>
+			MagicSnap is a passion project of mine that I started thinking about in
+			late 2023. My robotics team was using teamsnap to manage our team at the
+			time and none of us were happy with the experience. I remember thinking
+			<em> "Hey, I could probably make something better than this." </em>
+			and that envolved into this!
+		</p>
+		<p>
+			MagicSnap is a team management platform that is designed to be accessible,
+			easy to use, and fun to interact with with a focus on FIRST robotics
+			teams. I'm currently in the process of building the first version of the
+			platform and I'm super excited to share it with the world!
+		</p>
+	</section>
+	<section>
+		<h2>How do I join?</h2>
+		<p>
+			Right now MagicSnap is in alpha and is not open to the public. If you are
+			interested in joining the alpha, please reach out to me on
+			<u><a href="https://discord.gg/NGWFZg5Fgn">Discord</a></u> and I will get you
+			added to the alpha list!
+		</p>
+	</section>
+	<section>
+		<h2>Features</h2>
+		<p>
+			Right now MagicSnap is in alpha and subject to rapid changes but here is a
+			general list of the features that are currently implemented and are on the
+			roadmap:
+
+			<table>
+				<thead>
+					<tr>
+						<th>Feature</th>
+						<th>Description</th>
+						<th>Added</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>Sign-in with Slack</td>
+						<td
+							>Allows you to sign in with slack and auto asigns admins based on
+							slack admin status.</td
+						>
+						<td>WIP - in active progress</td>
+					</tr>
+					<tr>
+						<td>Event Scheduling</td>
+						<td>Allows teams to schedule and manage events and competitions.</td
+						>
+						<td>WIP - in active progress</td>
+					</tr>
+					<tr>
+						<td>Team Management</td>
+						<td>Allows teams to manage their team members and roles.</td>
+						<td>Next up</td>
+					</tr>
+					<tr>
+						<td>FRC Dashboard Integration</td>
+						<td>Enable easy adding of team members to your FRC Dashboard!</td>
+						<td>Next up after team management</td>
+					</tr>
+				</tbody>
+			</table>
+
+			<p>
+				As you can see, there is a lot of work to be done but I'm super excited
+				to share this with the world and I'm excited to see where this project
+				goes!
+			</p>
+		</p>
+	</section>
+</Base>
