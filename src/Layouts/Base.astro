@@ -1,0 +1,36 @@
+---
+import "normalize.css";
+import "magick.css";
+
+interface Props {
+	title: string;
+}
+
+const date = new Date();
+
+const { title } = Astro.props;
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+	</head>
+	<body>
+		<main>
+			<header><h1>{title}</h1></header>
+
+			<slot />
+
+			<footer>
+				<p>
+					&copy; {date.getFullYear()}
+					<a href="https://github.com/kcoderhtml">Kieran Klukas</a>
+				</p>
+			</footer>
+		</main>
+	</body>
+</html>
