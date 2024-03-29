@@ -1,0 +1,26 @@
+---
+import Base from "../../Layouts/Base.astro";
+---
+
+<Base title="Dashboard">
+	<section>
+		<p id="user"></p>
+	</section>
+</Base>
+
+<script>
+	const token = localStorage.getItem("token");
+	console.log(token);
+	const user = await fetch("/api/user", {
+		headers: {
+			Authorization: `Bearer ${token}`,
+		},
+	});
+	const userElement = document.getElementById("user");
+
+	console.log(await user.text());
+
+	if (user && userElement) {
+		userElement.textContent = `Hello, ${user}`;
+	}
+</script>

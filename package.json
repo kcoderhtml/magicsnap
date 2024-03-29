@@ -11,9 +11,11 @@
 	},
 	"dependencies": {
 		"@astrojs/check": "^0.5.10",
+		"@astrojs/db": "^0.9.5",
 		"@astrojs/netlify": "^5.2.0",
 		"@astrojs/tailwind": "^5.1.0",
 		"astro": "^4.5.10",
+		"jwt-decode": "^4.0.0",
 		"magick.css": "^1.0.5",
 		"normalize.css": "^8.0.1",
 		"tailwindcss": "^3.4.2",

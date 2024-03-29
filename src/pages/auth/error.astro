@@ -1,0 +1,22 @@
+---
+import Base from "../../Layouts/Base.astro";
+---
+
+<Base title="Error">
+	<section>
+		<p class="text-center">We ran into a problem: <b id="error-field"></b></p>
+
+		<p class="text-center">
+			<u><a href="/">Go back to the home page</a></u>
+		</p>
+	</section>
+
+	<script>
+		const errorField = document.getElementById("error-field");
+		if (errorField) {
+			errorField.textContent = new URLSearchParams(location.search).get(
+				"error"
+			);
+		}
+	</script>
+</Base>
