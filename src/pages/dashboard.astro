@@ -1,5 +1,6 @@
 ---
 import Base from "../Layouts/Base.astro";
+import AuthContainer from "../components/AuthContainer.astro";
 
 import { getSession } from "auth-astro/server";
 
@@ -24,4 +25,76 @@ const session = await getSession(Astro.request);
 			</div>
 		)
 	}
+
+	<section>
+		<AuthContainer />
+	</section>
+
+	<section>
+		<p>In your organization orgname there are currently x number of events</p>
+	</section>
+	<section class="events">
+		<table>
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Date</th>
+					<th>Time</th>
+					<th>Location</th>
+					<th>Description</th>
+					<th>Status</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>Event 1</td>
+					<td>01/01/2022</td>
+					<td>12:00 PM</td>
+					<td>Location 1</td>
+					<td>Description 1</td>
+					<td>y/m/n</td>
+				</tr>
+				<tr>
+					<td>Event 2</td>
+					<td>01/01/2022</td>
+					<td>12:00 PM</td>
+					<td>Location 2</td>
+					<td>Description 2</td>
+					<td>y/m/n</td>
+				</tr>
+				<tr>
+					<td>Event 3</td>
+					<td>01/01/2022</td>
+					<td>12:00 PM</td>
+					<td>Location 3</td>
+					<td>Description 3</td>
+					<td>y/m/n</td>
+				</tr>
+			</tbody>
+		</table>
+	</section>
 </Base>
+
+<style>
+	.events {
+		text-align: center;
+	}
+
+	table {
+		width: 100%;
+		border: 0.1rem solid #ddd;
+	}
+
+	th, td {
+		padding: 1rem;
+		border-bottom: 0.1rem solid #ddd;
+	}
+
+	.events table th {
+		text-align: left;
+	}
+
+	.events table td {
+		text-align: left;
+	}
+</style>

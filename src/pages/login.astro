@@ -21,7 +21,7 @@ const session = await getSession(Astro.request);
 				<p>You are not logged in.</p>
 
                 <Auth>
-                    <SignIn provider="slack">Sign In</SignIn>
+                    <SignIn provider="slack" options={{ callbackUrl: "/dashboard" }}>Sign In</SignIn>
                 </Auth>
 			</div>
 		)
