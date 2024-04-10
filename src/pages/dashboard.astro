@@ -3,35 +3,45 @@ import Base from "../Layouts/Base.astro";
 import AuthContainer from "../components/AuthContainer.astro";
 
 import { getSession } from "auth-astro/server";
+import { type Session } from "@auth/core/types";
 
-const session = await getSession(Astro.request);
+type ExtendedSession = {
+	team: string;
+	teamName: string;
+	teamImage: string;
+};
+
+const session = (await getSession(Astro.request)) as Session & ExtendedSession;
+
+if (!session) {
+	return new Response(null, {
+		status: 302,
+		headers: new Headers({
+			Location: "/login",
+		}),
+	});
+}
+
+import { db, Event } from "astro:db";
+import { like } from "astro:db";
+
+const events = await db
+	.select()
+	.from(Event)
+	.where(like(Event.orgId, session.team));
 ---
 
 <Base title="Dashboard">
-	{
-		session ? (
-			null
-		) : (
-			<div style="text-align: center;">
-				<p>You are not logged in.</p>
-
-				<p>Redirecting</p>
-
-                <script>
-                    setTimeout(() => {
-                        window.location.href = "/login";
-                    }, 500);
-                </script>
-			</div>
-		)
-	}
-
 	<section>
 		<AuthContainer />
 	</section>
 
 	<section>
-		<p>In your organization orgname there are currently x number of events</p>
+		<p>
+			In your organization {session.teamName} there are currently {
+				events.length
+			} events
+		</p>
 	</section>
 	<section class="events">
 		<table>
@@ -46,30 +56,23 @@ const session = await getSession(Astro.request);
 				</tr>
 			</thead>
 			<tbody>
-				<tr>
-					<td>Event 1</td>
-					<td>01/01/2022</td>
-					<td>12:00 PM</td>
-					<td>Location 1</td>
-					<td>Description 1</td>
-					<td>y/m/n</td>
-				</tr>
-				<tr>
-					<td>Event 2</td>
-					<td>01/01/2022</td>
-					<td>12:00 PM</td>
-					<td>Location 2</td>
-					<td>Description 2</td>
-					<td>y/m/n</td>
-				</tr>
-				<tr>
-					<td>Event 3</td>
-					<td>01/01/2022</td>
-					<td>12:00 PM</td>
-					<td>Location 3</td>
-					<td>Description 3</td>
-					<td>y/m/n</td>
-				</tr>
+				{
+					events.map(({ name, comments, location, date }) => (
+						<tr>
+							<td>{name}</td>
+							<td>{date.toLocaleDateString()}</td>
+							<td>
+								{date.toLocaleTimeString([], {
+									hour: "2-digit",
+									minute: "2-digit",
+								})}
+							</td>
+							<td>{location}</td>
+							<td>{comments}</td>
+							<td>y/m/n</td>
+						</tr>
+					))
+				}
 			</tbody>
 		</table>
 	</section>
@@ -85,7 +88,8 @@ const session = await getSession(Astro.request);
 		border: 0.1rem solid #ddd;
 	}
 
-	th, td {
+	th,
+	td {
 		padding: 1rem;
 		border-bottom: 0.1rem solid #ddd;
 	}
