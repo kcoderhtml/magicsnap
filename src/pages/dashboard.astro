@@ -15,7 +15,7 @@ const session = (await getSession(Astro.request)) as Session & ExtendedSession;
 
 if (!session) {
 	const error = "authentication_error";
-	const errorDescription = "User session not found";
+	const errorDescription = "User session not found or expired. Please log in.";
 	const queryParams = new URLSearchParams({ error, errorDescription });
 	const redirectUrl = `/error?${queryParams.toString()}`;
 
