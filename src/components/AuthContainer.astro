@@ -1,0 +1,72 @@
+---
+import type { Session } from "@auth/core/types";
+import { Auth, SignIn, SignOut } from "auth-astro/components";
+---
+
+<div>
+	<Auth>
+		{
+			(session: Session) => {
+				if (session) {
+					return (
+						<div class="signed-in-container">
+							<a href="dashboard">
+								<img src={`${session.user?.image}`} alt="" />
+							</a>
+							<div class="text-centered">
+								<p>Welcome, {session.user?.name}!</p>
+								<p>{session.user?.email}</p>
+							</div>
+							<SignOut>Sign Out</SignOut>
+						</div>
+					);
+				} else {
+					return (
+						<div class="signed-out-container">
+							<SignIn provider="slack">Sign In</SignIn>
+						</div>
+					);
+				}
+			}
+		}
+	</Auth>
+</div>
+
+<style>
+	img {
+		width: 10rem;
+		border-radius: 50%;
+	}
+
+	button {
+		margin: 0;
+	}
+
+	.signed-in-container {
+		display: flex; /* Maintains row layout */
+		align-items: center; /* Aligns content vertically */
+		flex-direction: row; /* Ensures items are displayed in a row */
+		border-radius: 1rem; /* Creates rounded corners */
+		border: 0.1rem solid #ccc; /* Adds a border around the content */
+		justify-content: space-between;
+		padding: 1.5rem;
+	}
+
+	.signed-out-container {
+		display: flex; /* Maintains row layout */
+		align-items: center; /* Aligns content vertically */
+		flex-direction: row; /* Ensures items are displayed in a row */
+		border-radius: 1rem; /* Creates rounded corners */
+		border: 0.1rem solid #ccc; /* Adds a border around the content */
+		justify-content: center;
+		padding: 1rem;
+	}
+
+	.signed-out-container button {
+		border: none;
+	}
+
+	.text-centered {
+		text-align: center;
+	}
+</style>

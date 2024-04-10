@@ -6,6 +6,7 @@ export default defineConfig({
 		Slack({
 			clientId: import.meta.env.SLACK_CLIENT_ID,
 			clientSecret: import.meta.env.SLACK_CLIENT_SECRET,
+			checks: ["pkce", "nonce"],
 		}),
 	],
 });

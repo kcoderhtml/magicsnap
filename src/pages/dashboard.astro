@@ -1,0 +1,27 @@
+---
+import Base from "../Layouts/Base.astro";
+
+import { getSession } from "auth-astro/server";
+
+const session = await getSession(Astro.request);
+---
+
+<Base title="Dashboard">
+	{
+		session ? (
+			null
+		) : (
+			<div style="text-align: center;">
+				<p>You are not logged in.</p>
+
+				<p>Redirecting</p>
+
+                <script>
+                    setTimeout(() => {
+                        window.location.href = "/login";
+                    }, 500);
+                </script>
+			</div>
+		)
+	}
+</Base>

@@ -3,9 +3,10 @@ import "normalize.css";
 import "magick.css";
 
 import Base from "../Layouts/Base.astro";
+import AuthContainer from "../components/AuthContainer.astro";
 ---
 
-<Base title="MagicSnap" nav>
+<Base title="MagicSnap">
 	<section>
 		<p>
 			MagicSnap is a passion project of mine that I started thinking about in
@@ -29,6 +30,9 @@ import Base from "../Layouts/Base.astro";
 			<u><a href="https://discord.gg/NGWFZg5Fgn">Discord</a></u> and I will get you
 			added to the alpha list!
 		</p>
+	</section>
+	<section>
+		<AuthContainer />
 	</section>
 	<section>
 		<h2>Features</h2>

@@ -4,11 +4,7 @@ import "magick.css";
 
 interface Props {
 	title: string;
-	nav?: boolean;
 }
-
-import type { Session } from "@auth/core/types";
-import { Auth, SignIn, SignOut } from "auth-astro/components";
 
 const date = new Date();
 
@@ -27,22 +23,6 @@ const { title } = Astro.props;
 		<main>
 			<header>
 				<h1>{title}</h1>
-				<Auth>
-					{
-						(session: Session) => {
-							if (session) {
-								return (
-									<>
-										<p>Logged in as {session.user && session.user.name}</p>
-										<SignOut>Sign Out</SignOut>
-									</>
-								);
-							} else {
-								return <SignIn provider="slack">Sign In</SignIn>;
-							}
-						}
-					}
-				</Auth>
 			</header>
 
 			<slot />
