@@ -17,15 +17,15 @@ import { Auth, SignIn, SignOut } from "auth-astro/components";
 								<p>Welcome, {session.user?.name}!</p>
 								<p>{session.user?.email}</p>
 							</div>
-							<SignOut>Sign Out</SignOut>
+							<SignOut params={{ callbackUrl: "/" }}>Sign Out</SignOut>
 						</div>
 					);
 				} else {
 					return (
 						<div class="signed-out-container">
-							<SignIn provider="slack" options={{ callbackUrl: "/dashboard" }}>
-								Sign In
-							</SignIn>
+							<button>
+								<a href="/login">Login</a>
+							</button>
 						</div>
 					);
 				}
