@@ -23,9 +23,9 @@ import { Auth, SignIn, SignOut } from "auth-astro/components";
 				} else {
 					return (
 						<div class="signed-out-container">
-							<button>
-								<a href="/login">Login</a>
-							</button>
+							<SignIn provider="slack" options={{ callbackUrl: "/dashboard" }}>
+								Sign In
+							</SignIn>
 						</div>
 					);
 				}
