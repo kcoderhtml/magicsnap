@@ -1,0 +1,15 @@
+---
+import Base from "../Layouts/Base.astro";
+
+// get the error from the redirect
+const params = new URLSearchParams(Astro.request.url.split("?")[1]);
+
+const errorShort = params.get("error");
+const error = params.get("errorDescription");
+---
+
+<Base title=`Error | ${errorShort}`>
+	<section>
+		<p>{error}</p>
+	</section>
+</Base>
