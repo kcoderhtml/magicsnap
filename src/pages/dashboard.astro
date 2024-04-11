@@ -9,6 +9,9 @@ type ExtendedSession = {
 	team: string;
 	teamName: string;
 	teamImage: string;
+	user: {
+		role: string;
+	};
 };
 
 const session = (await getSession(Astro.request)) as Session & ExtendedSession;
@@ -33,7 +36,7 @@ import { like } from "astro:db";
 const events = await db
 	.select()
 	.from(Event)
-	.where(like(Event.orgId, session.team));
+	.where(like(Event.team, session.team));
 ---
 
 <Base title="Dashboard">

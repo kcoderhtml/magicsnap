@@ -1,23 +1,54 @@
 ---
 import type { Session } from "@auth/core/types";
 import { Auth, SignIn, SignOut } from "auth-astro/components";
+
+type ExtendedSession = {
+	team: string;
+	teamName: string;
+	teamImage: string;
+	user: {
+		role: string;
+	};
+};
 ---
 
 <div>
 	<Auth>
 		{
-			(session: Session) => {
+			(session: Session & ExtendedSession) => {
 				if (session) {
 					return (
 						<div class="signed-in-container">
-							<a href="dashboard">
-								<img src={`${session.user?.image}`} alt="" />
-							</a>
-							<div class="text-centered">
-								<p>Welcome, {session.user?.name}!</p>
-								<p>{session.user?.email}</p>
+							<div class="top">
+								<a href="dashboard">
+									<img src={`${session.user?.image}`} alt="" class="admin" />
+								</a>
+								<div class="text-centered">
+									<p>
+										Welcome,{" "}
+										{session.user.role == "user" ? null : session.user.role}{" "}
+										{session.user?.name}!
+									</p>
+									<p>{session.user?.email}</p>
+								</div>
+								<SignOut params={{ callbackUrl: "/" }}>Sign Out</SignOut>
 							</div>
-							<SignOut params={{ callbackUrl: "/" }}>Sign Out</SignOut>
+							<div class="bottom text-centered">
+								<h2>{session.teamName}</h2>
+								<nav>
+									<a href="/dashboard" class="nav">
+										Dashboard
+									</a>
+									/{" "}
+									<a href="/users" class="nav">
+										User Management
+									</a>
+									/{" "}
+									<a href="/settings" class="nav">
+										Settings
+									</a>
+								</nav>
+							</div>
 						</div>
 					);
 				} else {
@@ -40,18 +71,30 @@ import { Auth, SignIn, SignOut } from "auth-astro/components";
 		border-radius: 50%;
 	}
 
+	.admin {
+		border: 0.35rem ridge red;
+	}
+
 	button {
 		margin: 0;
 	}
 
 	.signed-in-container {
+		border: 0.1rem solid #ccc; /* Adds a border around the content */
+		border-radius: 1rem; /* Creates rounded corners */
+		padding: 1.5rem;
+	}
+
+	.signed-in-container .top {
 		display: flex; /* Maintains row layout */
 		align-items: center; /* Aligns content vertically */
 		flex-direction: row; /* Ensures items are displayed in a row */
-		border-radius: 1rem; /* Creates rounded corners */
-		border: 0.1rem solid #ccc; /* Adds a border around the content */
 		justify-content: space-between;
-		padding: 1.5rem;
+		border-bottom: 0.1rem solid #ccc;
+	}
+
+	.signed-in-container .bottom a {
+		text-decoration: underline;
 	}
 
 	.signed-out-container {

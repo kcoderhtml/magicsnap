@@ -3,22 +3,23 @@ import { defineDb, defineTable, column } from 'astro:db';
 
 const Organization = defineTable({
   columns: {
-    orgId: column.text({ primaryKey: true }),
+    team: column.text({ primaryKey: true }),
     name: column.text(),
     image: column.text(),
   },
   indexes: {
-    orgIdx: { on: ["orgId"], unique: true },
+    teamx: { on: ["team"], unique: true },
   }
 })
 
 const User = defineTable({
   columns: {
     userId: column.text({ primaryKey: true }),
-    orgId: column.text(),
+    team: column.text(),
     name: column.text(),
     email: column.text(),
     image: column.text(),
+    role: column.text(),
   },
   indexes: {
     userIdx: { on: ["userId"], unique: true },
@@ -28,7 +29,7 @@ const User = defineTable({
 const Event = defineTable({
   columns: {
     eventId: column.text({ primaryKey: true }),
-    orgId: column.text(),
+    team: column.text(),
     name: column.text(),
     comments: column.text(),
     date: column.date(),

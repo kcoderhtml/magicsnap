@@ -1,5 +1,6 @@
 import Slack from "@auth/core/providers/slack";
 import { defineConfig } from "auth-astro";
+import { db, like, User } from "astro:db";
 
 export default defineConfig({
 	providers: [
@@ -8,6 +9,13 @@ export default defineConfig({
 			clientSecret: import.meta.env.SLACK_CLIENT_SECRET,
 			checks: ["pkce", "nonce"],
 			async profile(profile) {
+				const role = await db
+					.select({ role: User.role })
+					.from(User)
+					.where(like(User.userId, profile["https://slack.com/user_id"]));
+
+				console.log("Role:", role[0].role);
+
 				return {
 					id: profile["https://slack.com/user_id"],
 					name: profile.name,
@@ -16,6 +24,7 @@ export default defineConfig({
 					team: profile["https://slack.com/team_id"],
 					teamName: profile["https://slack.com/team_name"],
 					teamImage: profile["https://slack.com/team_image_230"],
+					role: role[0].role || "user",
 				};
 			},
 		}),
@@ -27,6 +36,7 @@ export default defineConfig({
 				token.team = user.team;
 				token.teamName = user.teamName;
 				token.teamImage = user.teamImage;
+				token.role = user.role;
 			}
 			return token;
 		},
@@ -36,6 +46,7 @@ export default defineConfig({
 				session.team = token.team;
 				session.teamName = token.teamName;
 				session.teamImage = token.teamImage;
+				session.user.role = token.role;
 			}
 			return session;
 		},
