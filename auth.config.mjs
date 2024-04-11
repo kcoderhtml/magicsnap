@@ -1,6 +1,6 @@
 import Slack from "@auth/core/providers/slack";
 import { defineConfig } from "auth-astro";
-import { db, like, User } from "astro:db";
+import { db, like, User, Organization } from "astro:db";
 
 export default defineConfig({
 	providers: [
@@ -10,11 +10,56 @@ export default defineConfig({
 			checks: ["pkce", "nonce"],
 			async profile(profile) {
 				const role = await db
-					.select({ role: User.role })
+					.select()
 					.from(User)
 					.where(like(User.userId, profile["https://slack.com/user_id"]));
 
-				console.log("Role:", role[0].role);
+				if (role.length === 0) {
+					const users = await db
+						.select()
+						.from(User)
+						.where(like(User.team, profile["https://slack.com/team_id"]));
+
+					const organizations = await db
+						.select()
+						.from(Organization)
+						.where(
+							like(Organization.team, profile["https://slack.com/team_id"])
+						);
+
+					// check if the user is part of an organization in the db by checking if the team id is the same
+					if (
+						organizations
+							.map((org) => org.team)
+							.includes(profile["https://slack.com/team_id"])
+					) {
+						if (users.length === 0) {
+							await db.insert(User).values({
+								userId: profile["https://slack.com/user_id"],
+								name: profile.name,
+								email: profile.email,
+								image: profile.picture,
+								team: profile["https://slack.com/team_id"],
+								role: "admin",
+							});
+
+							role[0] = { role: "admin" };
+						} else {
+							await db.insert(User).values({
+								userId: profile["https://slack.com/user_id"],
+								name: profile.name,
+								email: profile.email,
+								image: profile.picture,
+								team: profile["https://slack.com/team_id"],
+								role: "user",
+							});
+
+							role[0] = { role: "user" };
+						}
+					}
+				} else {
+					role[0] = { role: "guest" };
+				}
 
 				return {
 					id: profile["https://slack.com/user_id"],

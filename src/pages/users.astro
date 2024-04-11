@@ -1,0 +1,107 @@
+---
+import Base from "../Layouts/Base.astro";
+import AuthContainer from "../components/AuthContainer.astro";
+
+import { getSession } from "auth-astro/server";
+import { type Session } from "@auth/core/types";
+
+type ExtendedSession = {
+	team: string;
+	teamName: string;
+	teamImage: string;
+	user: {
+		role: string;
+	};
+};
+
+const session = (await getSession(Astro.request)) as Session & ExtendedSession;
+
+if (!session) {
+	const error = "authentication_error";
+	const errorDescription = "User session not found or expired. Please log in.";
+	const queryParams = new URLSearchParams({ error, errorDescription });
+	const redirectUrl = `/error?${queryParams.toString()}`;
+
+	return new Response(null, {
+		status: 302,
+		headers: new Headers({
+			Location: redirectUrl,
+		}),
+	});
+}
+
+import { db, User } from "astro:db";
+
+const users = await db.select().from(User);
+---
+
+<Base title="Dashboard">
+	<section>
+		<AuthContainer />
+	</section>
+
+	<section>
+		<p>
+			In your organization {session.teamName} there are currently {users.length}
+			users.
+		</p>
+	</section>
+	<section class="users">
+		<table>
+			<thead>
+				<tr>
+					<th>Team</th>
+					<th>Name</th>
+					<th>Email</th>
+					<th>Image</th>
+					<th>Role</th>
+				</tr>
+			</thead>
+			<tbody>
+				{
+					users.map(({ team, name, email, image, role }) => (
+						<tr>
+							<td>{team}</td>
+							<td>{name}</td>
+							<td>{email}</td>
+							<td>
+								<img src=`${image}` alt="" class="profile-pic"/>
+							</td>
+							<td>{role}</td>
+						</tr>
+					))
+				}
+			</tbody>
+		</table>
+	</section>
+</Base>
+
+<style>
+	.events {
+		text-align: center;
+	}
+
+	table {
+		width: 100%;
+		border: 0.1rem solid #ddd;
+	}
+
+	th,
+	td {
+		padding: 1rem;
+		border-bottom: 0.1rem solid #ddd;
+	}
+
+	.events table th {
+		text-align: left;
+	}
+
+	.events table td {
+		text-align: left;
+	}
+
+    .profile-pic {
+        width: 6rem;
+        border-radius: 50%;
+    }
+</style>

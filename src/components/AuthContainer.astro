@@ -21,7 +21,7 @@ type ExtendedSession = {
 						<div class="signed-in-container">
 							<div class="top">
 								<a href="dashboard">
-									<img src={`${session.user?.image}`} alt="" class="admin" />
+									<img src={`${session.user?.image}`} alt="" class=`${session.user.role == "admin" ? "admin" : null}` />
 								</a>
 								<div class="text-centered">
 									<p>
