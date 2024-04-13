@@ -46,12 +46,16 @@ if (!session) {
 
 import { db, Event, User } from "astro:db";
 import { like } from "astro:db";
-1
+
 if (Astro.request.method === "POST") {
 	try {
 		const data = await Astro.request.formData();
+		console.log("data", data);
+		console.log("selected", data.get("selected"));
 
-		if (data.get("selected") != "") {
+		if (data.get("selected") != null) {
+			console.log("updating availability");
+
 			const eventID = data.get("eventID") as string;
 			const status = data.get("selected") as string;
 
@@ -117,23 +121,24 @@ if (Astro.request.method === "POST") {
 					.where(like(Event.id, eventID));
 			}
 		} else {
-		const event = {
-			name: data.get("name") as string,
-			date: new Date(`${data.get("date")}T${data.get("time")}`),
-			location: data.get("location") as string,
-			comments: data.get("comments") as string,
-			team: session.team,
-			statusGoing: "",
-			statusMaybe: "",
-			statusNotGoing: (
-				await db.select().from(User).where(like(User.team, session.team))
-			)
-				.map(({ userId }) => userId)
-				.join(","),
-		};
+			console.log("creating new event");
+			const event = {
+				name: data.get("name") as string,
+				date: new Date(`${data.get("date")}T${data.get("time")}`),
+				location: data.get("location") as string,
+				comments: data.get("comments") as string,
+				team: session.team,
+				statusGoing: "",
+				statusMaybe: "",
+				statusNotGoing: (
+					await db.select().from(User).where(like(User.team, session.team))
+				)
+					.map(({ userId }) => userId)
+					.join(","),
+			};
 
-		await db.insert(Event).values(event);
-	}
+			await db.insert(Event).values(event);
+		}
 	} catch (error) {
 		if (error instanceof Error) {
 			console.error(error.message);
