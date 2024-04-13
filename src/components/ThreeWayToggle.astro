@@ -7,9 +7,8 @@ interface Props {
 const { eventID, selected } = Astro.props;
 ---
 
-<div class="container">
-	<span id="default-selected">{eventID}-{selected}</span>
-
+<div class="threeWayToggle-container">
+	<span id="default-selected">{selected}</span>
 	<div>
 		<input
 			id=`${eventID}-yes`
@@ -41,7 +40,7 @@ const { eventID, selected } = Astro.props;
 	</div>
 
 	<form method="post">
-		<input type="text" name="eventID" class="hidden" />
+		<input type="text" name="eventID" class="hidden" value=`${eventID}` />
 		<input type="text" name="selected" class="hidden" />
 
 		<input
@@ -55,12 +54,12 @@ const { eventID, selected } = Astro.props;
 </div>
 
 <style>
-	.container {
+	.threeWayToggle-container {
 		display: flex;
 		justify-content: space-around;
 	}
 
-	.container > div {
+	.threeWayToggle-container > div {
 		flex: 1;
 		text-align: center; /* Center text within boxes */
 		cursor: pointer; /* Make the entire box clickable */
@@ -108,35 +107,39 @@ const { eventID, selected } = Astro.props;
 </style>
 
 <script>
-	const radioButtons = document.querySelectorAll("input[type=radio]");
-
-	const defaultSelected =
-		document.getElementById("default-selected")?.textContent;
-
-	const submitButton = document.getElementById(
-		`${defaultSelected?.split("-")[0]}-submit`
+	const threeWayToggleContainers = document.querySelectorAll(
+		".threeWayToggle-container"
 	);
 
-	const selectedInput = document.querySelector(
-		"input[name=selected]"
-	) as HTMLInputElement;
-	const eventIDInput = document.querySelector(
-		"input[name=eventID]"
-	) as HTMLInputElement;
+	threeWayToggleContainers.forEach((container) => {
+		const radioButtons = container.querySelectorAll("input[type=radio]");
+		const submitButton = container.querySelector(
+			"input[type=submit"
+		) as HTMLInputElement;
+		const selectedInput = container.querySelector(
+			"input[name=selected]"
+		) as HTMLInputElement;
+		const defaultSelected =
+			container.querySelector("#default-selected")?.textContent;
+		const eventID = (
+			container.querySelector("input[name=eventID]") as HTMLInputElement
+		).value;
 
-	if (submitButton && selectedInput && eventIDInput) {
-		eventIDInput.value = defaultSelected?.split("-")[0] || "";
-		radioButtons.forEach((radioButton) => {
-			radioButton.addEventListener("change", (event) => {
-				const selected = (event.target as HTMLInputElement).id;
-				if (selected != defaultSelected) {
-					submitButton.style.display = "block";
-					selectedInput.value = selected.split("-")[1];
-				} else {
-					submitButton.style.display = "none";
-					selectedInput.value = "";
-				}
+		if (submitButton && selectedInput) {
+			radioButtons.forEach((radioButton) => {
+				radioButton.addEventListener("change", (event) => {
+					const selected = (event.target as HTMLInputElement).id;
+					console.log(selected.split("-")[1]);
+					console.log(defaultSelected);
+					if (selected.split("-")[1] != defaultSelected) {
+						submitButton.style.display = "block";
+						selectedInput.value = selected.split("-")[1];
+					} else {
+						submitButton.style.display = "none";
+						selectedInput.value = "";
+					}
+				});
 			});
-		});
-	}
+		}
+	});
 </script>
