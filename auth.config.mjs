@@ -77,7 +77,6 @@ export default defineConfig({
 	callbacks: {
 		jwt({ token, user }) {
 			if (user) {
-				console.log(user);
 				// User is available during sign-in
 				token.team = user.team;
 				token.teamName = user.teamName;
