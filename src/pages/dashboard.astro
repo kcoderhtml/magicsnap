@@ -1,6 +1,7 @@
 ---
 import Base from "../Layouts/Base.astro";
 import AuthContainer from "../components/AuthContainer.astro";
+import ThreeWayToggle from "../components/ThreeWayToggle.astro";
 
 import { getSession } from "auth-astro/server";
 import { type Session } from "@auth/core/types";
@@ -45,16 +46,85 @@ if (!session) {
 
 import { db, Event, User } from "astro:db";
 import { like } from "astro:db";
-
+1
 if (Astro.request.method === "POST") {
 	try {
 		const data = await Astro.request.formData();
+
+		if (data.get("selected") != "") {
+			const eventID = data.get("eventID") as string;
+			const status = data.get("selected") as string;
+
+			const event = (await db
+				.select()
+				.from(Event)
+				.where(like(Event.id, eventID)))?.[0];
+
+			if (event) {
+				let statusGoing = event.statusGoing.split(",").filter((id) => id !== "");
+				let statusMaybe = event.statusMaybe.split(",").filter((id) => id !== "");
+				let statusNotGoing = event.statusNotGoing.split(",").filter((id) => id !== "");
+
+				console.log("statusGoing", statusGoing);
+				console.log("statusMaybe", statusMaybe);
+				console.log("statusNotGoing", statusNotGoing);
+
+				const currentStatus = statusGoing.includes(session.user.id)
+					? "yes"
+					: statusMaybe.includes(session.user.id)
+					? "maybe"
+					: "no";
+
+				console.log("currentStatus", currentStatus);
+				console.log("status", status);
+
+				if (currentStatus !== status) {
+					if (status === "yes") {
+						console.log("status is going");
+						statusGoing.push(session.user.id);
+						statusMaybe = statusMaybe.filter((id) => id !== session.user.id);
+						statusNotGoing = statusNotGoing.filter(
+							(id) => id !== session.user.id
+						); 
+					} else if (status === "maybe") {
+						console.log("status is maybe");
+						statusMaybe.push(session.user.id);
+						statusGoing = statusGoing.filter((id) => id !== session.user.id);
+						statusNotGoing = statusNotGoing.filter(
+							(id) => id !== session.user.id
+						);
+					} else if (status === "no" && currentStatus !== "no") {
+						console.log("status is not going");
+						statusNotGoing.push(session.user.id);
+						statusGoing = statusGoing.filter((id) => id !== session.user.id);
+						statusMaybe = statusMaybe.filter((id) => id !== session.user.id);
+					}
+				} else {
+					console.log("status is the same");
+				}
+
+				console.log("statusGoing", statusGoing);
+				console.log("statusMaybe", statusMaybe);
+				console.log("statusNotGoing", statusNotGoing);
+
+				await db
+					.update(Event)
+					.set({
+						statusGoing: statusGoing.join(","),
+						statusMaybe: statusMaybe.join(","),
+						statusNotGoing: statusNotGoing.join(","),
+					})
+					.where(like(Event.id, eventID));
+			}
+		} else {
 		const event = {
 			name: data.get("name") as string,
 			date: new Date(`${data.get("date")}T${data.get("time")}`),
 			location: data.get("location") as string,
 			comments: data.get("comments") as string,
 			team: session.team,
+			statusGoing: "",
+			statusMaybe: "",
 			statusNotGoing: (
 				await db.select().from(User).where(like(User.team, session.team))
 			)
@@ -63,6 +133,7 @@ if (Astro.request.method === "POST") {
 		};
 
 		await db.insert(Event).values(event);
+	}
 	} catch (error) {
 		if (error instanceof Error) {
 			console.error(error.message);
@@ -110,6 +181,10 @@ const events = await db
 		</details>
 	</section>
 	<section class="events">
+		<h2>Events</h2>
+		<div id="status-indicator">
+			<button>Do you want to save your availability?</button>
+		</div>
 		<table>
 			<thead>
 				<tr>
@@ -123,7 +198,7 @@ const events = await db
 			</thead>
 			<tbody>
 				{
-					events.map(({ name, comments, location, date }) => (
+					events.map(({ name, comments, location, date, id, statusGoing, statusMaybe }) => (
 						<tr>
 							<td>{name}</td>
 							<td>{date.toLocaleDateString()}</td>
@@ -135,7 +210,9 @@ const events = await db
 							</td>
 							<td>{location}</td>
 							<td>{comments}</td>
-							<td>y/m/n</td>
+							<td>
+								<ThreeWayToggle eventID=`${id}` selected=`${statusGoing?.includes(session.user.id) ? "yes" : statusMaybe?.includes(session.user.id) ? "maybe" : "no"}` />
+							</td>
 						</tr>
 					))
 				}
@@ -168,6 +245,12 @@ const events = await db
 		text-align: left;
 	}
 
+	/* make the three way toggle column */
+	.events table td:last-child {
+		text-align: center;
+		width: fit-content;
+	}
+
 	form {
 		display: flex;
 		flex-direction: column;
@@ -178,4 +261,36 @@ const events = await db
 		display: flex;
 		gap: 1rem;
 	}
+
+	#status-indicator {
+		display: none;
+		padding-bottom: 2.5rem;
+	}
 </style>
+
+<script>
+	// get all the three way toggles by the id threeWayToggle
+	const threeWayToggles = document.getElementsByName("threeWayToggle");
+	const statusIndicator = document.getElementById("status-indicator");
+
+	console.log("threeWayToggles", threeWayToggles);
+
+	if (statusIndicator) {
+		console.log("statusIndicator", statusIndicator);
+		threeWayToggles.forEach((toggle) => {
+			console.log("toggle", toggle);
+			// set a listener for the data-interacted attribute on the toggles first div element
+			const firstDiv = toggle.shadowRoot?.querySelector("div");
+
+			if (firstDiv) {
+				firstDiv.addEventListener("data-interacted", async (event) => {
+					if (toggle.getAttribute("data-interacted") === "true") {
+						statusIndicator.style.display = "block";
+					} else {
+						statusIndicator.style.display = "none";
+					}
+				});
+			}
+		});
+	}
+</script>

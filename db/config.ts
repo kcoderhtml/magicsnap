@@ -1,4 +1,4 @@
-import { defineDb, defineTable, column } from 'astro:db';
+import { defineDb, defineTable, column, sql } from 'astro:db';
 
 
 const Organization = defineTable({
@@ -28,15 +28,19 @@ const User = defineTable({
 
 const Event = defineTable({
   columns: {
+    id: column.number({ primaryKey: true, unique: true }),
     team: column.text(),
     name: column.text(),
     comments: column.text(),
     date: column.date(),
     location: column.text(),
-    statusGoing: column.text({ default: "", optional: true }),
-    statusMaybe: column.text({ default: "", optional: true }),
+    statusGoing: column.text(),
+    statusMaybe: column.text(),
     statusNotGoing: column.text(),
   },
+  indexes: {
+    idx: { on: ["id"], unique: true },
+  }
 })
 
 // https://astro.build/db/config

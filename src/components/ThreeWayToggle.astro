@@ -1,0 +1,142 @@
+---
+interface Props {
+	eventID: string;
+	selected: string;
+}
+
+const { eventID, selected } = Astro.props;
+---
+
+<div class="container">
+	<span id="default-selected">{eventID}-{selected}</span>
+
+	<div>
+		<input
+			id=`${eventID}-yes`
+			name=`eventID-${eventID}`
+			type="radio"
+			checked={selected === "yes"}
+		/>
+		<label for=`${eventID}-yes`>Yes</label>
+	</div>
+
+	<div>
+		<input
+			id=`${eventID}-maybe`
+			name=`eventID-${eventID}`
+			type="radio"
+			checked={selected === "maybe"}
+		/>
+		<label for=`${eventID}-maybe`>Maybe</label>
+	</div>
+
+	<div>
+		<input
+			id=`${eventID}-no`
+			name=`eventID-${eventID}`
+			type="radio"
+			checked={selected === "no"}
+		/>
+		<label for=`${eventID}-no`>No</label>
+	</div>
+
+	<form method="post">
+		<input type="text" name="eventID" class="hidden" />
+		<input type="text" name="selected" class="hidden" />
+
+		<input
+			type="submit"
+			style="display: none"
+			id=`${eventID}-submit`
+			name=`${eventID}-submit`
+			value="Update Availability?"
+		/>
+	</form>
+</div>
+
+<style>
+	.container {
+		display: flex;
+		justify-content: space-around;
+	}
+
+	.container > div {
+		flex: 1;
+		text-align: center; /* Center text within boxes */
+		cursor: pointer; /* Make the entire box clickable */
+	}
+
+	input[type="radio"] {
+		display: none;
+	}
+
+	input[type="radio"]:checked + label {
+		color: red;
+	}
+
+	/* Target the label and its sibling radio button (the + symbol) */
+	label,
+	label + input[type="radio"] {
+		cursor: pointer;
+		line-height: 3em;
+		margin: 0;
+	}
+
+	form {
+		display: flex;
+		background: transparent;
+		flex-direction: row;
+	}
+
+	#default-selected {
+		display: none;
+	}
+
+	input[type="submit"] {
+		margin: 0;
+		padding: 0;
+		border: none;
+		text-decoration: underline;
+	}
+
+	.hidden {
+		display: none;
+		margin: 0;
+		padding: 0;
+		border: none;
+	}
+</style>
+
+<script>
+	const radioButtons = document.querySelectorAll("input[type=radio]");
+
+	const defaultSelected =
+		document.getElementById("default-selected")?.textContent;
+
+	const submitButton = document.getElementById(
+		`${defaultSelected?.split("-")[0]}-submit`
+	);
+
+	const selectedInput = document.querySelector(
+		"input[name=selected]"
+	) as HTMLInputElement;
+	const eventIDInput = document.querySelector(
+		"input[name=eventID]"
+	) as HTMLInputElement;
+
+	if (submitButton && selectedInput && eventIDInput) {
+		eventIDInput.value = defaultSelected?.split("-")[0] || "";
+		radioButtons.forEach((radioButton) => {
+			radioButton.addEventListener("change", (event) => {
+				const selected = (event.target as HTMLInputElement).id;
+				if (selected != defaultSelected) {
+					submitButton.style.display = "block";
+					selectedInput.value = selected.split("-")[1];
+				} else {
+					submitButton.style.display = "none";
+					selectedInput.value = "";
+				}
+			});
+		});
+	}
+</script>
