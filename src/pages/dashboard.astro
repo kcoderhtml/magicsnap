@@ -28,6 +28,19 @@ if (!session) {
 			Location: redirectUrl,
 		}),
 	});
+} else if (session.user.role === "guest") {
+	const error = "authorization_error";
+	const errorDescription =
+		"User does not have the necessary permissions to access this page. Please log in with an authorized account. If you believe this is an error, please contact your administrator.";
+	const queryParams = new URLSearchParams({ error, errorDescription });
+	const redirectUrl = `/error?${queryParams.toString()}`;
+
+	return new Response(null, {
+		status: 302,
+		headers: new Headers({
+			Location: redirectUrl,
+		}),
+	});
 }
 
 import { db, Event } from "astro:db";
