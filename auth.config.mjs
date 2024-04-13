@@ -56,9 +56,9 @@ export default defineConfig({
 
 							role[0] = { role: "user" };
 						}
+					} else {
+						role[0] = { role: "guest" };
 					}
-				} else {
-					role[0] = { role: "guest" };
 				}
 
 				return {
@@ -77,11 +77,13 @@ export default defineConfig({
 	callbacks: {
 		jwt({ token, user }) {
 			if (user) {
+				console.log(user);
 				// User is available during sign-in
 				token.team = user.team;
 				token.teamName = user.teamName;
 				token.teamImage = user.teamImage;
 				token.role = user.role;
+				token.id = user.id;
 			}
 			return token;
 		},
@@ -92,6 +94,7 @@ export default defineConfig({
 				session.teamName = token.teamName;
 				session.teamImage = token.teamImage;
 				session.user.role = token.role;
+				session.user.id = token.id;
 			}
 			return session;
 		},
