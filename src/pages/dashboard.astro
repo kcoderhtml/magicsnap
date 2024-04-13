@@ -43,8 +43,32 @@ if (!session) {
 	});
 }
 
-import { db, Event } from "astro:db";
+import { db, Event, User } from "astro:db";
 import { like } from "astro:db";
+
+if (Astro.request.method === "POST") {
+	try {
+		const data = await Astro.request.formData();
+		const event = {
+			name: data.get("name") as string,
+			date: new Date(`${data.get("date")}T${data.get("time")}`),
+			location: data.get("location") as string,
+			comments: data.get("comments") as string,
+			team: session.team,
+			statusNotGoing: (
+				await db.select().from(User).where(like(User.team, session.team))
+			)
+				.map(({ userId }) => userId)
+				.join(","),
+		};
+
+		await db.insert(Event).values(event);
+	} catch (error) {
+		if (error instanceof Error) {
+			console.error(error.message);
+		}
+	}
+}
 
 const events = await db
 	.select()
@@ -63,6 +87,27 @@ const events = await db
 				events.length
 			} events
 		</p>
+	</section>
+	<section>
+		<details id="new-event-container">
+			<summary>Create a new event?</summary>
+			<form method="post" name="new-event" id="new-event">
+				<label for="name">Name</label>
+				<input type="text" id="name" name="name" required />
+				<div class="date-time">
+					<label for="date">Date</label>
+					<input type="date" id="date" name="date" required />
+					<label for="time">Time</label>
+					<input type="time" id="time" name="time" required />
+				</div>
+				<label for="location">Location</label>
+				<input type="text" id="location" name="location" required />
+				<label for="comments">Comments</label>
+				<textarea id="comments" name="comments" required></textarea>
+
+				<button type="submit">Create Event</button>
+			</form>
+		</details>
 	</section>
 	<section class="events">
 		<table>
@@ -121,5 +166,16 @@ const events = await db
 
 	.events table td {
 		text-align: left;
+	}
+
+	form {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.date-time {
+		display: flex;
+		gap: 1rem;
 	}
 </style>

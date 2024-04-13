@@ -28,16 +28,15 @@ const User = defineTable({
 
 const Event = defineTable({
   columns: {
-    eventId: column.text({ primaryKey: true }),
     team: column.text(),
     name: column.text(),
     comments: column.text(),
     date: column.date(),
     location: column.text(),
+    statusGoing: column.text({ default: "", optional: true }),
+    statusMaybe: column.text({ default: "", optional: true }),
+    statusNotGoing: column.text(),
   },
-  indexes: {
-    eventIdx: { on: ["eventId"], unique: true },
-  }
 })
 
 // https://astro.build/db/config
