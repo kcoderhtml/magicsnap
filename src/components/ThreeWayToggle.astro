@@ -121,9 +121,6 @@ const { eventID, selected } = Astro.props;
 		) as HTMLInputElement;
 		const defaultSelected =
 			container.querySelector("#default-selected")?.textContent;
-		const eventID = (
-			container.querySelector("input[name=eventID]") as HTMLInputElement
-		).value;
 
 		if (submitButton && selectedInput) {
 			radioButtons.forEach((radioButton) => {
