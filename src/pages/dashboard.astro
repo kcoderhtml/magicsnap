@@ -50,11 +50,8 @@ import { like } from "astro:db";
 if (Astro.request.method === "POST") {
 	try {
 		const data = await Astro.request.formData();
-		console.log("data", data);
-		console.log("selected", data.get("selected"));
 
 		if (data.get("selected") != null) {
-			console.log("updating availability");
 
 			const eventID = data.get("eventID") as string;
 			const status = data.get("selected") as string;
@@ -69,47 +66,32 @@ if (Astro.request.method === "POST") {
 				let statusMaybe = event.statusMaybe.split(",").filter((id) => id !== "");
 				let statusNotGoing = event.statusNotGoing.split(",").filter((id) => id !== "");
 
-				console.log("statusGoing", statusGoing);
-				console.log("statusMaybe", statusMaybe);
-				console.log("statusNotGoing", statusNotGoing);
-
 				const currentStatus = statusGoing.includes(session.user.id)
 					? "yes"
 					: statusMaybe.includes(session.user.id)
 					? "maybe"
 					: "no";
 
-				console.log("currentStatus", currentStatus);
-				console.log("status", status);
 
 				if (currentStatus !== status) {
 					if (status === "yes") {
-						console.log("status is going");
 						statusGoing.push(session.user.id);
 						statusMaybe = statusMaybe.filter((id) => id !== session.user.id);
 						statusNotGoing = statusNotGoing.filter(
 							(id) => id !== session.user.id
 						); 
 					} else if (status === "maybe") {
-						console.log("status is maybe");
 						statusMaybe.push(session.user.id);
 						statusGoing = statusGoing.filter((id) => id !== session.user.id);
 						statusNotGoing = statusNotGoing.filter(
 							(id) => id !== session.user.id
 						);
 					} else if (status === "no" && currentStatus !== "no") {
-						console.log("status is not going");
 						statusNotGoing.push(session.user.id);
 						statusGoing = statusGoing.filter((id) => id !== session.user.id);
 						statusMaybe = statusMaybe.filter((id) => id !== session.user.id);
 					}
-				} else {
-					console.log("status is the same");
 				}
-
-				console.log("statusGoing", statusGoing);
-				console.log("statusMaybe", statusMaybe);
-				console.log("statusNotGoing", statusNotGoing);
 
 				await db
 					.update(Event)
@@ -121,7 +103,13 @@ if (Astro.request.method === "POST") {
 					.where(like(Event.id, eventID));
 			}
 		} else {
-			console.log("creating new event");
+			if (!data.has("name") || !data.has("date") || !data.has("time") || !data.has("location") || !data.has("comments")) {
+				throw new Error("Please fill out all fields");
+			} else if (new Date(`${data.get("date")}T${data.get("time")}`) < new Date()) {
+				throw new Error("Please select a future date and time");
+			} else if (session.user.role === "user") {
+				throw new Error("Only admins can create events");
+			}
 			const event = {
 				name: data.get("name") as string,
 				date: new Date(`${data.get("date")}T${data.get("time")}`),
@@ -164,32 +152,37 @@ const events = await db
 			} events
 		</p>
 	</section>
-	<section>
-		<details id="new-event-container">
-			<summary>Create a new event?</summary>
-			<form method="post" name="new-event" id="new-event">
-				<label for="name">Name</label>
-				<input type="text" id="name" name="name" required />
-				<div class="date-time">
-					<label for="date">Date</label>
-					<input type="date" id="date" name="date" required />
-					<label for="time">Time</label>
-					<input type="time" id="time" name="time" required />
-				</div>
-				<label for="location">Location</label>
-				<input type="text" id="location" name="location" required />
-				<label for="comments">Comments</label>
-				<textarea id="comments" name="comments" required></textarea>
+	{
+		session.user.role === "admin" && (
+			<section>
+				<p>As an admin, you can create new events</p>
+			</section>
+			<section>
+				<details id="new-event-container">
+					<summary>Create a new event?</summary>
+					<form method="post" name="new-event" id="new-event">
+						<label for="name">Name</label>
+						<input type="text" id="name" name="name" required />
+						<div class="date-time">
+							<label for="date">Date</label>
+							<input type="date" id="date" name="date" required />
+							<label for="time">Time</label>
+							<input type="time" id="time" name="time" required />
+						</div>
+						<label for="location">Location</label>
+						<input type="text" id="location" name="location" required />
+						<label for="comments">Comments</label>
+						<textarea id="comments" name="comments" required></textarea>
 
-				<button type="submit">Create Event</button>
-			</form>
-		</details>
-	</section>
+						<button type="submit">Create Event</button>
+					</form>
+				</details>
+			</section>
+		)
+	}
+	
 	<section class="events">
 		<h2>Events</h2>
-		<div id="status-indicator">
-			<button>Do you want to save your availability?</button>
-		</div>
 		<table>
 			<thead>
 				<tr>
@@ -272,30 +265,3 @@ const events = await db
 		padding-bottom: 2.5rem;
 	}
 </style>
-
-<script>
-	// get all the three way toggles by the id threeWayToggle
-	const threeWayToggles = document.getElementsByName("threeWayToggle");
-	const statusIndicator = document.getElementById("status-indicator");
-
-	console.log("threeWayToggles", threeWayToggles);
-
-	if (statusIndicator) {
-		console.log("statusIndicator", statusIndicator);
-		threeWayToggles.forEach((toggle) => {
-			console.log("toggle", toggle);
-			// set a listener for the data-interacted attribute on the toggles first div element
-			const firstDiv = toggle.shadowRoot?.querySelector("div");
-
-			if (firstDiv) {
-				firstDiv.addEventListener("data-interacted", async (event) => {
-					if (toggle.getAttribute("data-interacted") === "true") {
-						statusIndicator.style.display = "block";
-					} else {
-						statusIndicator.style.display = "none";
-					}
-				});
-			}
-		});
-	}
-</script>
