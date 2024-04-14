@@ -138,6 +138,8 @@ const events = await db
 	.select()
 	.from(Event)
 	.where(like(Event.team, session.team));
+
+const users = await db.select().from(User).where(like(User.team, session.team));
 ---
 
 <Base title="Dashboard">
@@ -196,7 +198,7 @@ const events = await db
 			</thead>
 			<tbody>
 				{
-					events.map(({ name, comments, location, date, id, statusGoing, statusMaybe }) => (
+					events.map(({ name, comments, location, date, id, statusGoing, statusMaybe, statusNotGoing }) => (
 						<tr>
 							<td>{name}</td>
 							<td>{date.toLocaleDateString()}</td>
@@ -210,6 +212,46 @@ const events = await db
 							<td>{comments}</td>
 							<td>
 								<ThreeWayToggle eventID=`${id}` selected=`${statusGoing?.includes(session.user.id) ? "yes" : statusMaybe?.includes(session.user.id) ? "maybe" : "no"}` />
+							</td>
+						</tr>
+						<tr>
+							<td colspan="7">
+								{
+									statusGoing?.length !== 0 && 
+									<h3>Going</h3>
+									
+									<ul>
+										{
+											users.filter(({ userId }) => statusGoing?.includes(userId)).map(({ name }) => (
+												<li>{name}</li>
+											))
+										}
+									</ul>
+								}
+								{
+									statusMaybe?.length !== 0 && 
+									<h3>Maybe Going</h3>
+									
+									<ul>
+										{
+											users.filter(({ userId }) => statusMaybe?.includes(userId)).map(({ name }) => (
+												<li>{name}</li>
+											))
+										}
+									</ul>
+								}
+								{
+									statusNotGoing?.length !== 0 && 
+									<h3>Not Going</h3>
+									
+									<ul>
+										{
+											users.filter(({ userId }) => statusNotGoing?.includes(userId)).map(({ name }) => (
+												<li>{name}</li>
+											))
+										}
+									</ul>
+								}
 							</td>
 						</tr>
 					))
