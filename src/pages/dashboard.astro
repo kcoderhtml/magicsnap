@@ -47,6 +47,8 @@ if (!session) {
 import { db, Event, User } from "astro:db";
 import { like } from "astro:db";
 
+let errors: string[] = [];
+
 if (Astro.request.method === "POST") {
 	try {
 		const data = await Astro.request.formData();
@@ -129,7 +131,9 @@ if (Astro.request.method === "POST") {
 		}
 	} catch (error) {
 		if (error instanceof Error) {
-			console.error(error.message);
+			errors.push(error.message);
+		} else {
+			errors.push("An unknown error occurred");
 		}
 	}
 }
@@ -179,6 +183,11 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 						<button type="submit">Create Event</button>
 					</form>
 				</details>
+				{
+					errors.length !== 0 && (
+						<h3 style="color: red">Error: {errors.join(", ")}</h3>
+					)
+				}
 			</section>
 		)
 	}
@@ -188,6 +197,7 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 		<table>
 			<thead>
 				<tr>
+					<th></th>
 					<th>Name</th>
 					<th>Date</th>
 					<th>Time</th>
@@ -200,6 +210,12 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 				{
 					events.map(({ name, comments, location, date, id, statusGoing, statusMaybe, statusNotGoing }) => (
 						<tr>
+							<td>
+								<div class="availability-toggle-container" style="display: flex; align-items: center;">
+									<input id=`collapsible-${id}` class="toggle" type="checkbox" />
+									<label for=`collapsible-${id}` class="lbl-toggle"></label>
+								</div>
+							</td>
 							<td>{name}</td>
 							<td>{date.toLocaleDateString()}</td>
 							<td>
@@ -215,7 +231,8 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 							</td>
 						</tr>
 						<tr>
-							<td colspan="7">
+							<td colspan="7" class="collapsible collapsed">
+								<div class="collapsible-content collapsed">
 								{
 									statusGoing?.length !== 0 && 
 									<h3>Going</h3>
@@ -252,6 +269,7 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 										}
 									</ul>
 								}
+								</div>
 							</td>
 						</tr>
 					))
@@ -306,4 +324,82 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 		display: none;
 		padding-bottom: 2.5rem;
 	}
+
+	input[type='checkbox'] {
+		display: none;
+	}
+
+	.lbl-toggle {
+		display: block;
+
+		font-weight: bold;
+		font-family: monospace;
+		font-size: 1.2rem;
+		text-transform: uppercase;
+		text-align: center;
+
+		padding: 1rem;
+
+		cursor: pointer;
+
+		border-radius: 7px;
+	}
+
+	.lbl-toggle::before {
+		content: ' ';
+		display: inline-block;
+
+		border-top: 5px solid transparent;
+		border-bottom: 5px solid transparent;
+		border-left: 5px solid white;
+		vertical-align: middle;
+		margin-right: .7rem;
+		transform: translateY(-2px);
+
+		transition: transform .2s ease-out;
+	}
+
+	.toggle:checked + .lbl-toggle::before {
+		transform: rotate(90deg) translateX(-3px);
+	}
+
+	.collapsible {
+		overflow: hidden;
+		transition: max-height 0.25s ease-out;
+	}
+
+	.collapsible-content {
+		overflow: hidden;
+		transition: max-height 0.25s ease-out;
+	}
+
+	.collapsed {
+		max-height: 0;
+		padding: 0;
+		border: none;
+	}
 </style>
+
+<script>
+	const collapsibles = document.querySelectorAll(".collapsible") as NodeListOf<HTMLDivElement>;
+	const toggles = document.querySelectorAll(".availability-toggle-container .toggle") as NodeListOf<HTMLInputElement>;
+	
+	collapsibles.forEach((collapsible, id) => {
+		const toggle = toggles[id];
+		const content = collapsible.querySelector(".collapsible-content") as HTMLDivElement;
+
+		console.log(toggle, content);
+
+		if (toggle) {
+			toggle.addEventListener("change", () => {
+				if (toggle.checked) {
+					collapsible.classList.remove("collapsed");
+					content.classList.remove("collapsed");
+				} else {
+					collapsible.classList.add("collapsed");
+					content.classList.add("collapsed");
+				}
+			});
+		}
+	});
+</script>
