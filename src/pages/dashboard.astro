@@ -53,8 +53,9 @@ if (Astro.request.method === "POST") {
 	try {
 		const data = await Astro.request.formData();
 
-		if (data.get("selected") != null) {
+		console.log(data);
 
+		if (data.get("availability") != null) {
 			const eventID = data.get("eventID") as string;
 			const status = data.get("selected") as string;
 
@@ -104,7 +105,15 @@ if (Astro.request.method === "POST") {
 					})
 					.where(like(Event.id, eventID));
 			}
-		} else {
+		} else if (data.get("delete") != null) {
+			if (session.user.role != "admin") {
+				throw new Error("Only admins can delete events");
+			}
+			const eventID = data.get("eventID") as string;
+
+			await db.delete(Event).where(like(Event.id, eventID));
+		} 
+		else if (data.get("newEvent") != null) {
 			if (!data.has("name") || !data.has("date") || !data.has("time") || !data.has("location") || !data.has("comments")) {
 				throw new Error("Please fill out all fields");
 			} else if (new Date(`${data.get("date")}T${data.get("time")}`) < new Date()) {
@@ -112,6 +121,7 @@ if (Astro.request.method === "POST") {
 			} else if (session.user.role === "user") {
 				throw new Error("Only admins can create events");
 			}
+
 			const event = {
 				name: data.get("name") as string,
 				date: new Date(`${data.get("date")}T${data.get("time")}`),
@@ -126,7 +136,6 @@ if (Astro.request.method === "POST") {
 					.map(({ userId }) => userId)
 					.join(","),
 			};
-
 			await db.insert(Event).values(event);
 		}
 	} catch (error) {
@@ -179,7 +188,7 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 						<input type="text" id="location" name="location" required />
 						<label for="comments">Comments</label>
 						<textarea id="comments" name="comments" required></textarea>
-
+						<input type="hidden" name="newEvent" value="true" id="newEvent" />
 						<button type="submit">Create Event</button>
 					</form>
 				</details>
@@ -204,6 +213,13 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 					<th>Location</th>
 					<th>Description</th>
 					<th>Status</th>
+					{
+						session.user.role == "admin" && (
+							<th>
+								Delete
+							</th>
+						) 
+					}
 				</tr>
 			</thead>
 			<tbody>
@@ -229,6 +245,17 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 							<td>
 								<ThreeWayToggle eventID=`${id}` selected=`${statusGoing?.includes(session.user.id) ? "yes" : statusMaybe?.includes(session.user.id) ? "maybe" : "no"}` />
 							</td>
+							{
+								session.user.role == "admin" && (
+									<td>
+										<form method="post" style="background: transparent; margin: 0, padding 0">
+											<input type="hidden" name="eventID" value=`${id}` />
+											<input type="hidden" name="delete" value="true" />
+											<button type="submit" style="margin-top: 0">Delete</button>
+										</form>
+									</td>
+								) 
+							}
 						</tr>
 						<tr>
 							<td colspan="7" class="collapsible collapsed">

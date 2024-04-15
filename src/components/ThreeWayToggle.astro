@@ -42,6 +42,7 @@ const { eventID, selected } = Astro.props;
 	<form method="post">
 		<input type="text" name="eventID" class="hidden" value=`${eventID}` />
 		<input type="text" name="selected" class="hidden" />
+		<input type="hidden" name="availability" value="true" />
 
 		<input
 			type="submit"
