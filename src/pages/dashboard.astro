@@ -240,7 +240,7 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 									minute: "2-digit",
 								})}
 							</td>
-							<td>{location}</td>
+							<td class="page-break">{location}</td>
 							<td>{comments}</td>
 							<td>
 								<ThreeWayToggle eventID=`${id}` selected=`${statusGoing?.includes(session.user.id) ? "yes" : statusMaybe?.includes(session.user.id) ? "maybe" : "no"}` />
@@ -256,9 +256,15 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 									</td>
 								) 
 							}
+							<td class="availability-toggle-container-mobile">
+								<div class="availability-toggle-container" style="display: flex; align-items: center;">
+									<input id=`collapsible-${id}` class="toggle" type="checkbox" />
+									<label for=`collapsible-${id}` class="lbl-toggle"></label>
+								</div>
+							</td>
 						</tr>
-						<tr>
-							<td colspan="8" class="collapsible collapsed">
+						<tr class="mobile-format">
+							<td colspan="8" class="collapsible collapsed mobile-format">
 								<div class="collapsible-content collapsed">
 								{
 									statusGoing?.length !== 0 && 
@@ -310,7 +316,7 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 
 	.events {
 		text-align: center;
-		max-width: 125rem;
+		max-width: 76rem;
 	}
 
 	table {
@@ -338,6 +344,67 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 	/* make the three way toggle column */
 	.events table td:last-child {
 		text-align: center;
+	}
+
+	.availability-toggle-container-mobile {
+		display: none;
+	}
+
+	@media only screen and (max-width: 760px),
+	(min-device-width: 768px) and (max-device-width: 1024px)  {
+
+		/* Force table to not be like tables anymore */
+		table, thead, tbody, th, td, tr { 
+			display: block; 
+		}
+
+		/* Hide table headers (but not display: none;, for accessibility) */
+		thead tr { 
+			position: absolute;
+			top: -9999px;
+			left: -9999px;
+		}
+
+		tr.mobile-format {
+			border-bottom: 0.25rem solid #ddd;
+		}
+		
+		td { 
+			/* Behave  like a "row" */
+			border: none;
+			border-bottom: 1px solid #eee; 
+			position: relative;
+			padding-left: 50%; 
+		}
+
+		td, th {
+			max-width: 100%;
+		}
+		
+		td:before { 
+			/* Now like a table header */
+			position: absolute;
+			/* Top/left values mimic padding */
+			top: 6px;
+			left: 6px;
+			width: 100%; 
+			padding-right: 10px; 
+			white-space: nowrap;
+		}
+		
+		/*
+		Label the data
+		*/
+		td:nth-of-type(1) { display: none; }
+		td.mobile-format { display: block; padding-left: 15%; padding-right: 15%; }
+		td:nth-of-type(2):before { content: "Name"; }
+		td:nth-of-type(3):before { content: "Date"; }
+		td:nth-of-type(4):before { content: "Time"; }
+		td:nth-of-type(5):before { content: "Location"; }
+		td:nth-of-type(6):before { content: "Description"; }
+		td:nth-of-type(7) { padding-left: 15%; padding-right: 15%; }
+		td:nth-of-type(8) { padding-left: 15%; padding-right: 15%; }
+		td:nth-of-type(9) { padding-left: 15%; padding-right: 15%; }
 	}
 
 	form {
@@ -412,31 +479,35 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 
 <script>
 	const collapsibles = document.querySelectorAll(".collapsible") as NodeListOf<HTMLDivElement>;
-	const toggles = document.querySelectorAll(".availability-toggle-container .toggle") as NodeListOf<HTMLInputElement>;
 	
-	collapsibles.forEach((collapsible, id) => {
-		const toggle = toggles[id];
+	collapsibles.forEach((collapsible) => {
+		const toggles = collapsible.parentElement?.previousElementSibling?.querySelectorAll(".availability-toggle-container .toggle") as NodeListOf<HTMLInputElement>;
 		const content = collapsible.querySelector(".collapsible-content") as HTMLDivElement;
 
-		console.log(toggle, content);
+		console.log(toggles, content);
 
-		if (toggle) {
+		toggles.forEach((toggle) => {
 			toggle.addEventListener("change", () => {
 				if (toggle.checked) {
 					collapsible.classList.remove("collapsed");
 					content.classList.remove("collapsed");
+					// toggle the other toggles
+					toggles.forEach((otherToggle) => {
+						if (otherToggle !== toggle) {
+							otherToggle.checked = true;
+						}
+					});
 				} else {
 					collapsible.classList.add("collapsed");
 					content.classList.add("collapsed");
+
+					toggles.forEach((otherToggle) => {
+						if (otherToggle !== toggle) {
+							otherToggle.checked = false;
+						}
+					});
 				}
 			});
-		}
+		});
 	});
-</script>
-
-<script>
-	const tableContainer = document.querySelector(".event-container") as HTMLDivElement;
-	const table = tableContainer.querySelector(".events") as HTMLDivElement;
-
-	tableContainer.style.height = `${table.offsetHeight}px`;
 </script>
