@@ -259,7 +259,7 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 							<td class="availability-toggle-container-mobile">
 								<div class="availability-toggle-container" style="display: flex; align-items: center;">
 									<input id=`collapsible-${id}` class="toggle" type="checkbox" />
-									<label for=`collapsible-${id}` class="lbl-toggle"></label>
+									<label for=`collapsible-${id}` class="lbl-toggle">Display Availability</label>
 								</div>
 							</td>
 						</tr>
@@ -411,7 +411,7 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 		td:nth-of-type(7) { padding-left: 15%; padding-right: 15%; }
 		td:nth-of-type(7), th:nth-of-type(7) { max-width: 100%; }
 		td:nth-of-type(8) { padding-left: 15%; padding-right: 15%; }
-		td:nth-of-type(9) { padding-left: 15%; padding-right: 15%; }
+		td:nth-of-type(9) { padding-left: 15%; padding-right: 15%; display: flex; justify-content: center; }
 	}
 
 	form {
@@ -435,17 +435,9 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 
 	.lbl-toggle {
 		display: block;
-
-		font-weight: bold;
-		font-family: monospace;
-		font-size: 1.2rem;
-		text-transform: uppercase;
 		text-align: center;
-
 		padding: 1rem;
-
 		cursor: pointer;
-
 		border-radius: 7px;
 	}
 
