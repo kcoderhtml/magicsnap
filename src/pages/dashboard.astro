@@ -322,7 +322,7 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 	table {
 		border: 0.1rem solid #ddd;
 		table-layout: auto;
-		transform: translateX(calc((100% - 76rem)/-2));
+		transform: translateX(calc((100% - 76rem) / -1.5));
 	}
 
 	th,
@@ -332,6 +332,8 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 		word-wrap: break-word;
 		max-width: 20rem;
 	}
+
+	td:nth-of-type(7), th:nth-of-type(7) { max-width: fit-content; }
 
 	.events table th {
 		text-align: left;
@@ -356,6 +358,10 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 		/* Force table to not be like tables anymore */
 		table, thead, tbody, th, td, tr { 
 			display: block; 
+		}
+
+		table {
+			transform: none;
 		}
 
 		/* Hide table headers (but not display: none;, for accessibility) */
@@ -403,6 +409,7 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 		td:nth-of-type(5):before { content: "Location"; }
 		td:nth-of-type(6):before { content: "Description"; }
 		td:nth-of-type(7) { padding-left: 15%; padding-right: 15%; }
+		td:nth-of-type(7), th:nth-of-type(7) { max-width: 100%; }
 		td:nth-of-type(8) { padding-left: 15%; padding-right: 15%; }
 		td:nth-of-type(9) { padding-left: 15%; padding-right: 15%; }
 	}
