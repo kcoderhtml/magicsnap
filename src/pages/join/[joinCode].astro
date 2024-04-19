@@ -1,8 +1,11 @@
 ---
-import Base from "../Layouts/Base.astro";
+import Base from "../../Layouts/Base.astro";
 
 import { getSession } from "auth-astro/server";
 import { type Session } from "@auth/core/types";
+import { db } from "astro:db";
+import { Invite } from "astro:db";
+import { like } from "astro:db";
 
 type ExtendedSession = {
 	team: string;
@@ -30,14 +33,47 @@ if (session) {
 }
 
 const url = Astro.url.origin;
+const joinCode = Astro.params.joinCode;
+
+if (!joinCode || joinCode === "index.html") {
+	const error = "join_code_error";
+	const errorDescription = "No join code provided!";
+	const queryParams = new URLSearchParams({ error, errorDescription });
+	const redirectUrl = `/error?${queryParams.toString()}`;
+
+	return new Response(null, {
+		status: 302,
+		headers: new Headers({
+			Location: redirectUrl,
+		}),
+	});
+}
+
+const team = (
+	await db.select().from(Invite).where(like(Invite.verificationCode, joinCode))
+)[0];
+
+if (!team) {
+	const error = "join_code_error";
+	const errorDescription = "Invalid join code!";
+	const queryParams = new URLSearchParams({ error, errorDescription });
+	const redirectUrl = `/error?${queryParams.toString()}`;
+
+	return new Response(null, {
+		status: 302,
+		headers: new Headers({
+			Location: redirectUrl,
+		}),
+	});
+}
 ---
 
 <Base title="Connect your teams acount to MagicSnap!">
 	<section>
 		<p>
-			Thanks for signing up for MagicSnap! To get started, you'll need to
-			connect your Slack workspace to MagicSnap. This will allow us to enable
-			sign-in with Slack, and to access your team's profile information.
+			Thanks for signing your team {team.teamName} for MagicSnap! To get started,
+			you'll need to connect your Slack workspace to MagicSnap. This will allow us
+			to enable sign-in with Slack, and to access your team's profile information.
 		</p>
 	</section>
 	<section class="slack-button">

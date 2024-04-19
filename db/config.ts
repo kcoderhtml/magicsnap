@@ -43,7 +43,17 @@ const Event = defineTable({
   }
 })
 
+const Invite = defineTable({
+  columns: {
+    verificationCode: column.text({ primaryKey: true }),
+    teamName: column.text(),
+  },
+  indexes: {
+    verificationCodeIdx: { on: ["verificationCode"], unique: true },
+  }
+})
+
 // https://astro.build/db/config
 export default defineDb({
-  tables: { Organization, User, Event },
+  tables: { Organization, User, Event, Invite },
 });
