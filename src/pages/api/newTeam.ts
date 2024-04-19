@@ -51,7 +51,6 @@ export const GET: APIRoute = async ({ params, request }) => {
     }
 
     // check if the team is already in the database
-
     const teamExists = await db.select().from(Organization).where(like(Organization.team, slackData.team.id)).all();
 
     if (teamExists.length > 0) {
@@ -85,6 +84,7 @@ export const GET: APIRoute = async ({ params, request }) => {
         team: slackData.team.id,
         name: slackData.team.name,
         image: teamProfileData.team.icon.image_132,
+        slackToken: slackData.access_token,
     });
 
     const invite = (await db.select().from(Invite).where(like(Invite.verificationCode, state)))[0];

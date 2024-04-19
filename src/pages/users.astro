@@ -30,9 +30,56 @@ if (!session) {
 	});
 }
 
-import { db, User } from "astro:db";
+import { db, User, Organization } from "astro:db";
+import { like } from "astro:db";
 
-const users = await db.select().from(User);
+let users = await db.select().from(User);
+let slackUsers = users.filter((user) => user.role === "invited");
+
+if (Astro.request.method === "POST") {
+	const data = await Astro.request.formData();
+	console.log(data);
+
+	if (data.has("refresh")) {
+		const team = (await db.select().from(Organization).where(like(Organization.team, session.team)))[0];
+
+		const localSlackUsers = await fetch("https://slack.com/api/users.list", {
+			headers: {
+				Authorization: `Bearer ${team.slackToken}`,
+			},
+		}).then((res) => res.json());
+
+		console.log(localSlackUsers);
+
+		if (!localSlackUsers.ok) {
+			return new Response("Error fetching users from slack", { status: 500 });
+		}
+
+		// remove the user from the slackUsers list if they have an account
+		users.forEach((user) => {
+			localSlackUsers.members = localSlackUsers.members.filter((slackUser: any) => slackUser.profile.email !== user.email);
+		});
+
+		for (const slackUser of localSlackUsers.members) {
+			await db.insert(User).values({
+				team: session.team,
+				name: slackUser.name,
+				email: slackUser.profile.email || "",
+				image: slackUser.profile.image_192,
+				role: "invited",
+			});
+
+			slackUsers.push({
+				userId: "",
+				team: session.team,
+				name: slackUser.name,
+				email: slackUser.profile.email,
+				image: slackUser.profile.image_192,
+				role: "invited",
+			});
+		}
+	}
+}
 ---
 
 <Base title="Dashboard">
@@ -43,8 +90,15 @@ const users = await db.select().from(User);
 	<section>
 		<p>
 			In your organization {session.teamName} there are currently {users.length}
-			users.
+			users who have logged into MagicSnap. {slackUsers.length}
+			users are in your Slack workspace and haven't created an acount.
 		</p>
+	</section>
+	<section>
+		<form method="post" style="background: transparent">
+			<button name="refresh" type="submit" value="true" style="margin-top: 0;">Refresh the users from slack workspace</button>
+			<span>This only needs to be done if you just created an acount or if new users have join your slack workspace</span>
+		</form>
 	</section>
 	<section class="users">
 		<table>
@@ -58,10 +112,31 @@ const users = await db.select().from(User);
 				</tr>
 			</thead>
 			<tbody>
+				<tr>
+					<td colspan="5"><h3>Users with an acount</h3></td>
+				</tr>
 				{
 					users.map(({ team, name, email, image, role }) => (
 						<tr>
 							<td>{team}</td>
+							<td>{name}</td>
+							<td>{email}</td>
+							<td>
+								<img src=`${image}` alt="" class="profile-pic"/>
+							</td>
+							<td>{role}</td>
+						</tr>
+					))
+				}
+
+				<tr>
+					<td colspan="5"><h3>Users without an acount</h3></td>
+				</tr>
+
+				{
+					slackUsers.map(({ name, email, image, role }) => (
+						<tr>
+							<td>{session.team}</td>
 							<td>{name}</td>
 							<td>{email}</td>
 							<td>

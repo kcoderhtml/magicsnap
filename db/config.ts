@@ -6,6 +6,7 @@ const Organization = defineTable({
     team: column.text({ primaryKey: true }),
     name: column.text(),
     image: column.text(),
+    slackToken: column.text(),
   },
   indexes: {
     teamx: { on: ["team"], unique: true },
