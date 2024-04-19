@@ -1,4 +1,4 @@
-import { defineDb, defineTable, column, sql } from 'astro:db';
+import { defineDb, defineTable, column } from 'astro:db';
 
 
 const Organization = defineTable({
@@ -7,6 +7,7 @@ const Organization = defineTable({
     name: column.text(),
     image: column.text(),
     slackToken: column.text(),
+    lastSync: column.date({ optional: true }),
   },
   indexes: {
     teamx: { on: ["team"], unique: true },
