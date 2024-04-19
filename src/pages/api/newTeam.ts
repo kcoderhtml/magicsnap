@@ -1,9 +1,10 @@
 import type { APIRoute } from "astro"
-import { db, like, Organization } from "astro:db";
+import { db, Invite, like, Organization } from "astro:db";
 
 export const GET: APIRoute = async ({ params, request }) => {
     const urlParams = new URLSearchParams(request.url.split("?")[1])
     const code = urlParams.get("code")
+    const state = urlParams.get("state") || ""
 
     if (!code) {
         const error = "authorization_error";
@@ -86,12 +87,14 @@ export const GET: APIRoute = async ({ params, request }) => {
         image: teamProfileData.team.icon.image_132,
     });
 
-    return new Response(JSON.stringify({
-        slackData,
-        teamProfileData,
-    }), {
-        headers: {
-            "content-type": "application/json",
-        },
-    })
+    const invite = (await db.select().from(Invite).where(like(Invite.verificationCode, state)))[0];
+
+    return new Response(null, {
+        status: 302,
+        headers: new Headers({
+            Location: `/join/${state}?verification=${invite.installationToken}`,
+        }),
+    });
+
+    return new Response(null);
 }

@@ -47,6 +47,7 @@ const Invite = defineTable({
   columns: {
     verificationCode: column.text({ primaryKey: true }),
     teamName: column.text(),
+    installationToken: column.text(),
   },
   indexes: {
     verificationCodeIdx: { on: ["verificationCode"], unique: true },

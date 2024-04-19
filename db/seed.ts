@@ -7,6 +7,6 @@ export default async function seed() {
 	]);
 
 	await db.insert(Invite).values([
-		{ verificationCode: '123456', teamName: 'Hack Club' },
+		{ verificationCode: '123456', teamName: 'Hack Club', installationToken: 'xoxb-123456' },
 	]);
 }
