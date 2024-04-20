@@ -78,6 +78,8 @@ if (Astro.request.method === "POST") {
 			localSlackUsers.members = localSlackUsers.members.filter((slackUser: any) => slackUser.profile.email !== user.email);
 		});
 
+		localSlackUsers.members = localSlackUsers.members.filter((slackUser: any) => slackUser.profile.email !== "");
+
 		for (const slackUser of localSlackUsers.members) {
 			await db.insert(User).values({
 				userId: slackUser.id,
