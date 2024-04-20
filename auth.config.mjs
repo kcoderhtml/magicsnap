@@ -59,6 +59,15 @@ export default defineConfig({
 					} else {
 						role[0] = { role: "guest" };
 					}
+				} else if (role[0].role === "invited") {
+					role[0] = { role: "user" };
+
+					await db
+						.update(User)
+						.set({
+							role: "user",
+						})
+						.where(like(User.userId, profile["https://slack.com/user_id"]));
 				}
 
 				return {
