@@ -113,12 +113,13 @@ let users = await db.select().from(User).where(like(User.team, session.team));
 										<div class="actions">
 											<div class="non-mobile">
 												<form method="post" style="background: transparent; display: flex">
-													<select name="perms" id="perms" data-selected={role}>
+													<select name="selected" id="perms" data-selected={role}>
 														<option value="admin">Admin</option>
 														<option value="user">User</option>
 														<option value="guest">Guest</option>
 													</select>
-													<button type="submit" name="delete" value={userId} disabled>Update Perms</button>
+													<input type="hidden" name="perms" value="true">
+													<button type="submit" name="eventID" value={userId} disabled>Update Perms</button>
 												</form>
 											</div>
 											
