@@ -16,7 +16,7 @@ type ExtendedSession = {
 	<Auth>
 		{
 			(session: Session & ExtendedSession) => {
-				if (session) {
+				if (session && session.user.role !== "guest") {
 					return (
 						<div class="signed-in-container">
 							<div class="top">
@@ -51,6 +51,32 @@ type ExtendedSession = {
 							</div>
 						</div>
 					);
+				} else if (session && session.user.role === "guest") {
+					return (
+						<div class="signed-in-container">
+							<div class="top">
+								<a href="dashboard">
+									<img src={`${session.user?.image}`} alt="" />
+								</a>
+								<div class="text-centered">
+									<p>
+										Welcome,{" "}
+										{session.user?.name}!
+									</p>
+									<p>{session.user?.email}</p>
+								</div>
+								<SignOut params={{ callbackUrl: "/" }}>Sign Out</SignOut>
+							</div>
+							<div class="bottom text-centered">
+								<h2>{session.teamName}</h2>
+								<nav>
+									<a href="/join" class="nav">
+										if you have a join code click here.
+									</a>
+								</nav>
+							</div>
+						</div>
+					)
 				} else {
 					return (
 						<div class="signed-out-container">
