@@ -1,0 +1,58 @@
+---
+import Base from "../../Layouts/Base.astro";
+---
+
+<Base title="Join">
+	<section>
+		<p>
+			Hi! If you got here because you have a join code please enter it in the
+			form below. Otherwise if you would like to start using MagicSnap for your
+			team you can join our <u
+				><a href="https://discord.gg/NGWFZg5Fgn">Discord</a></u
+			> and ask for an invite and we would be happy to help you get started!
+		</p>
+	</section>
+	<section class="joinCodeForm">
+		<input type="text" name="codeInput" placeholder="Enter code here" />
+		<a href="/join"><button>Join</button></a>
+	</section>
+</Base>
+
+<style>
+	.joinCodeForm {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+	}
+	.joinCodeForm input {
+		margin: 1rem;
+		padding: 0.5rem;
+	}
+	.joinCodeForm button {
+		margin-top: 0;
+	}
+</style>
+
+<script>
+	const form = document.querySelector(".joinCodeForm");
+	const input = form?.querySelector("input");
+	const link = form?.querySelector("a");
+
+	input?.addEventListener("input", async () => {
+		const code = input?.value;
+		if (code) {
+			link?.setAttribute("href", `/join/${code}`);
+		}
+	});
+
+	input?.addEventListener("keydown", (event) => {
+		if (event.key === "Enter") {
+			event.preventDefault();
+			const code = input?.value;
+			if (code) {
+				window.location.href = `/join/${code}`;
+			}
+		}
+	});
+</script>

@@ -36,7 +36,7 @@ if (session && session.user.role !== "guest") {
 
 const joinCode = Astro.params.joinCode;
 
-if (!joinCode || joinCode === "index.html") {
+if (!joinCode) {
 	const error = "join_code_error";
 	const errorDescription = "No join code provided!";
 	const queryParams = new URLSearchParams({ error, errorDescription });
