@@ -55,6 +55,7 @@ if (!team.lastSync) {
 console.log(team);
 let slackUsers = users.filter((user) => user.role === "invited");
 
+let error = null;
 if (Astro.request.method === "POST") {
 	const data = await Astro.request.formData();
 	console.log(data);
@@ -97,6 +98,17 @@ if (Astro.request.method === "POST") {
 		}
 
 		await db.update(Organization).set({ lastSync: new Date() }).where(like(Organization.team, session.team));
+	} else if (data.has("delete")) {
+		const userId = data.get("delete") as string;
+		if (session.user.id !== userId && session.user.role === "admin") {
+			console.log("deleting user", userId);
+			console.log(session.user.id, userId, session.user.id === userId)
+			await db.delete(User).where(like(User.userId, userId));
+			users = users.filter((user) => user.userId !== userId);
+			slackUsers = slackUsers.filter((user) => user.userId !== userId);
+		} else {
+			error = "You can't delete yourself";
+		}
 	}
 }
 ---
@@ -139,6 +151,11 @@ if (Astro.request.method === "POST") {
 		)
 	}
 	<section class="users">
+		{
+			error && (
+				<h3 style="color: red; text-align: center;">Error: {error}</h3>
+			)
+		}
 		<table>
 			<thead>
 				<tr>
@@ -146,6 +163,7 @@ if (Astro.request.method === "POST") {
 					<th>Email</th>
 					<th>Image</th>
 					<th>Role</th>
+					<th>Actions</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -154,7 +172,7 @@ if (Astro.request.method === "POST") {
 				</tr>
 
 				{
-					users.map(({ team, name, email, image, role }) => (
+					users.map(({ userId, team, name, email, image, role }) => (
 						<tr>
 							<td>{name}</td>
 							<td>{email || "N/A"}</td>
@@ -162,6 +180,13 @@ if (Astro.request.method === "POST") {
 								<img src=`${image}` alt="" class="profile-pic"/>
 							</td>
 							<td>{role}</td>
+							<td>
+								<div class="actions">
+									<form method="post" style="background: transparent; display: flex">
+										<button name="delete" type="submit" value={userId} style="margin-top: 0;">Delete</button>
+									</form>
+								</div>
+							</td>
 						</tr>
 					))
 				}
