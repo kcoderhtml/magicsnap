@@ -1,0 +1,512 @@
+---
+import Base from "../Layouts/Base.astro";
+import AuthContainer from "../components/AuthContainer.astro";
+import ThreeWayToggle from "../components/ThreeWayToggle.astro";
+
+import { getSession } from "auth-astro/server";
+import { type Session } from "@auth/core/types";
+
+type ExtendedSession = {
+	team: string;
+	teamName: string;
+	teamImage: string;
+	user: {
+		role: string;
+	};
+};
+
+const session = (await getSession(Astro.request)) as Session & ExtendedSession;
+
+if (!session) {
+	const error = "authentication_error";
+	const errorDescription = "User session not found or expired. Please log in.";
+	const queryParams = new URLSearchParams({ error, errorDescription });
+	const redirectUrl = `/error?${queryParams.toString()}`;
+
+	return new Response(null, {
+		status: 302,
+		headers: new Headers({
+			Location: redirectUrl,
+		}),
+	});
+} else if (session.user.role === "guest") {
+	const error = "authorization_error";
+	const errorDescription =
+		"User does not have the necessary permissions to access this page. Please log in with an authorized account. If you believe this is an error, please contact your administrator.";
+	const queryParams = new URLSearchParams({ error, errorDescription });
+	const redirectUrl = `/error?${queryParams.toString()}`;
+
+	return new Response(null, {
+		status: 302,
+		headers: new Headers({
+			Location: redirectUrl,
+		}),
+	});
+}
+
+import { db, Event, User } from "astro:db";
+import { like } from "astro:db";
+
+let errors: string[] = [];
+
+if (Astro.request.method === "POST") {
+	try {
+		const data = await Astro.request.formData();
+
+		console.log(data);
+
+		if (data.get("availability") != null) {
+			const eventID = data.get("eventID") as string;
+			const status = data.get("selected") as string;
+
+			const event = (await db
+				.select()
+				.from(Event)
+				.where(like(Event.id, eventID)))?.[0];
+
+			if (event) {
+				let statusGoing = event.statusGoing.split(",").filter((id) => id !== "");
+				let statusMaybe = event.statusMaybe.split(",").filter((id) => id !== "");
+				let statusNotGoing = event.statusNotGoing.split(",").filter((id) => id !== "");
+
+				const currentStatus = statusGoing.includes(session.user.id)
+					? "yes"
+					: statusMaybe.includes(session.user.id)
+					? "maybe"
+					: "no";
+
+
+				if (currentStatus !== status) {
+					if (status === "yes") {
+						statusGoing.push(session.user.id);
+						statusMaybe = statusMaybe.filter((id) => id !== session.user.id);
+						statusNotGoing = statusNotGoing.filter(
+							(id) => id !== session.user.id
+						); 
+					} else if (status === "maybe") {
+						statusMaybe.push(session.user.id);
+						statusGoing = statusGoing.filter((id) => id !== session.user.id);
+						statusNotGoing = statusNotGoing.filter(
+							(id) => id !== session.user.id
+						);
+					} else if (status === "no" && currentStatus !== "no") {
+						statusNotGoing.push(session.user.id);
+						statusGoing = statusGoing.filter((id) => id !== session.user.id);
+						statusMaybe = statusMaybe.filter((id) => id !== session.user.id);
+					}
+				}
+
+				await db
+					.update(Event)
+					.set({
+						statusGoing: statusGoing.join(","),
+						statusMaybe: statusMaybe.join(","),
+						statusNotGoing: statusNotGoing.join(","),
+					})
+					.where(like(Event.id, eventID));
+			}
+		} else if (data.get("delete") != null) {
+			if (session.user.role != "admin") {
+				throw new Error("Only admins can delete events");
+			}
+			const eventID = data.get("eventID") as string;
+
+			await db.delete(Event).where(like(Event.id, eventID));
+		} 
+		else if (data.get("newEvent") != null) {
+			if (!data.has("name") || !data.has("date") || !data.has("time") || !data.has("location") || !data.has("comments")) {
+				throw new Error("Please fill out all fields");
+			} else if (new Date(`${data.get("date")}T${data.get("time")}`) < new Date()) {
+				throw new Error("Please select a future date and time");
+			} else if (session.user.role === "user") {
+				throw new Error("Only admins can create events");
+			}
+
+			const event = {
+				name: data.get("name") as string,
+				date: new Date(`${data.get("date")}T${data.get("time")}`),
+				location: data.get("location") as string,
+				comments: data.get("comments") as string,
+				team: session.team,
+				statusGoing: "",
+				statusMaybe: "",
+				statusNotGoing: (
+					await db.select().from(User).where(like(User.team, session.team))
+				)
+					.map(({ userId }) => userId)
+					.join(","),
+			};
+			await db.insert(Event).values(event);
+		}
+	} catch (error) {
+		if (error instanceof Error) {
+			errors.push(error.message);
+		} else {
+			errors.push("An unknown error occurred");
+		}
+	}
+}
+
+const events = await db
+	.select()
+	.from(Event)
+	.where(like(Event.team, session.team));
+
+const users = await db.select().from(User).where(like(User.team, session.team));
+---
+
+<Base title="Dashboard">
+	<section>
+		<AuthContainer />
+	</section>
+
+	<section>
+		<p>
+			In your organization {session.teamName} there are currently {
+				events.length
+			} events
+		</p>
+	</section>
+	{
+		session.user.role === "admin" && (
+			<section>
+				<p>As an admin, you can create new events</p>
+			</section>
+			<section>
+				<details id="new-event-container">
+					<summary>Create a new event?</summary>
+					<form method="post" name="new-event" id="new-event">
+						<label for="name">Name</label>
+						<input type="text" id="name" name="name" required />
+						<div class="date-time">
+							<label for="date">Date</label>
+							<input type="date" id="date" name="date" required />
+							<label for="time">Time</label>
+							<input type="time" id="time" name="time" required />
+						</div>
+						<label for="location">Location</label>
+						<input type="text" id="location" name="location" required />
+						<label for="comments">Comments</label>
+						<textarea id="comments" name="comments" required></textarea>
+						<input type="hidden" name="newEvent" value="true" id="newEvent" />
+						<button type="submit">Create Event</button>
+					</form>
+				</details>
+				{
+					errors.length !== 0 && (
+						<h3 style="color: red">Error: {errors.join(", ")}</h3>
+					)
+				}
+			</section>
+		)
+	}
+	
+	<section class="events">
+		<h2>Events</h2>
+		<table>
+			<thead>
+				<tr>
+					<th></th>
+					<th>Name</th>
+					<th>Date</th>
+					<th>Time</th>
+					<th>Location</th>
+					<th>Description</th>
+					<th>Status</th>
+					{
+						session.user.role == "admin" && (
+							<th>
+								Delete
+							</th>
+						) 
+					}
+				</tr>
+			</thead>
+			<tbody>
+				{
+					events.map(({ name, comments, location, date, id, statusGoing, statusMaybe, statusNotGoing }) => (
+						<tr>
+							<td>
+								<div class="availability-toggle-container" style="display: flex; align-items: center;">
+									<input id=`collapsible-${id}` class="toggle" type="checkbox" />
+									<label for=`collapsible-${id}` class="lbl-toggle"></label>
+								</div>
+							</td>
+							<td>{name}</td>
+							<td>{date.toLocaleDateString()}</td>
+							<td>
+								{date.toLocaleTimeString([], {
+									hour: "2-digit",
+									minute: "2-digit",
+								})}
+							</td>
+							<td class="page-break">{location}</td>
+							<td>{comments}</td>
+							<td>
+								<ThreeWayToggle eventID=`${id}` selected=`${statusGoing?.includes(session.user.id) ? "yes" : statusMaybe?.includes(session.user.id) ? "maybe" : "no"}` />
+							</td>
+							{
+								session.user.role == "admin" && (
+									<td>
+										<form method="post" style="background: transparent; margin: 0, padding 0">
+											<input type="hidden" name="eventID" value=`${id}` />
+											<input type="hidden" name="delete" value="true" />
+											<button type="submit" style="margin-top: 0">Delete</button>
+										</form>
+									</td>
+								) 
+							}
+							<td class="availability-toggle-container-mobile">
+								<div class="availability-toggle-container" style="display: flex; align-items: center;">
+									<input id=`collapsible-${id}` class="toggle" type="checkbox" />
+									<label for=`collapsible-${id}` class="lbl-toggle">Display Availability</label>
+								</div>
+							</td>
+						</tr>
+						<tr class="mobile-format">
+							<td colspan="8" class="collapsible collapsed mobile-format">
+								<div class="collapsible-content collapsed">
+								{
+									statusGoing?.length !== 0 && 
+									<h3>Going</h3>
+									
+									<ul>
+										{
+											users.filter(({ userId }) => statusGoing?.includes(userId)).map(({ name }) => (
+												<li>{name}</li>
+											))
+										}
+									</ul>
+								}
+								{
+									statusMaybe?.length !== 0 && 
+									<h3>Maybe Going</h3>
+									
+									<ul>
+										{
+											users.filter(({ userId }) => statusMaybe?.includes(userId)).map(({ name }) => (
+												<li>{name}</li>
+											))
+										}
+									</ul>
+								}
+								{
+									statusNotGoing?.length !== 0 && 
+									<h3>Not Going</h3>
+									
+									<ul>
+										{
+											users.filter(({ userId }) => statusNotGoing?.includes(userId)).map(({ name }) => (
+												<li>{name}</li>
+											))
+										}
+									</ul>
+								}
+								</div>
+							</td>
+						</tr>
+					))
+				}
+			</tbody>
+		</table>
+	</section>
+</Base>
+
+<style>
+
+	.events {
+		text-align: center;
+		max-width: 76rem;
+	}
+
+	table {
+		border: 0.1rem solid #ddd;
+		table-layout: auto;
+		transform: translateX(calc((100% - 76rem) / -1.5));
+	}
+
+	th,
+	td {
+		padding: 1rem;
+		border-bottom: 0.1rem solid #ddd;
+		word-wrap: break-word;
+		max-width: 20rem;
+	}
+
+	td:nth-of-type(7), th:nth-of-type(7) { max-width: fit-content; }
+
+	.events table th {
+		text-align: left;
+	}
+
+	.events table td {
+		text-align: left;
+	}
+
+	/* make the three way toggle column */
+	.events table td:last-child {
+		text-align: center;
+	}
+
+	.availability-toggle-container-mobile {
+		display: none;
+	}
+
+	@media only screen and (max-width: 760px),
+	(min-device-width: 768px) and (max-device-width: 1024px)  {
+
+		/* Force table to not be like tables anymore */
+		table, thead, tbody, th, td, tr { 
+			display: block; 
+		}
+
+		table {
+			transform: none;
+		}
+
+		/* Hide table headers (but not display: none;, for accessibility) */
+		thead tr { 
+			position: absolute;
+			top: -9999px;
+			left: -9999px;
+		}
+
+		tr.mobile-format {
+			border-bottom: 0.25rem solid #ddd;
+		}
+		
+		td { 
+			/* Behave  like a "row" */
+			border: none;
+			border-bottom: 1px solid #eee; 
+			position: relative;
+			padding-left: 50%; 
+		}
+
+		td, th {
+			max-width: 100%;
+		}
+		
+		td:before { 
+			/* Now like a table header */
+			position: absolute;
+			/* Top/left values mimic padding */
+			top: 6px;
+			left: 6px;
+			width: 100%; 
+			padding-right: 10px; 
+			white-space: nowrap;
+		}
+		
+		/*
+		Label the data
+		*/
+		td:nth-of-type(1) { display: none; }
+		td.mobile-format { display: block; padding-left: 15%; padding-right: 15%; }
+		td:nth-of-type(2):before { content: "Name"; }
+		td:nth-of-type(3):before { content: "Date"; }
+		td:nth-of-type(4):before { content: "Time"; }
+		td:nth-of-type(5):before { content: "Location"; }
+		td:nth-of-type(6):before { content: "Description"; }
+		td:nth-of-type(7) { padding-left: 15%; padding-right: 15%; }
+		td:nth-of-type(7), th:nth-of-type(7) { max-width: 100%; }
+		td:nth-of-type(8) { padding-left: 15%; padding-right: 15%; }
+		td:nth-of-type(9) { padding-left: 15%; padding-right: 15%; display: flex; justify-content: center; }
+	}
+
+	form {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.date-time {
+		display: flex;
+		gap: 1rem;
+	}
+
+	#status-indicator {
+		display: none;
+		padding-bottom: 2.5rem;
+	}
+
+	input[type='checkbox'] {
+		display: none;
+	}
+
+	.lbl-toggle {
+		display: block;
+		text-align: center;
+		padding: 1rem;
+		cursor: pointer;
+		border-radius: 7px;
+	}
+
+	.lbl-toggle::before {
+		content: ' ';
+		display: inline-block;
+
+		border-top: 5px solid transparent;
+		border-bottom: 5px solid transparent;
+		border-left: 5px solid white;
+		vertical-align: middle;
+		margin-right: .7rem;
+		transform: translateY(-2px);
+
+		transition: transform .2s ease-out;
+	}
+
+	.toggle:checked + .lbl-toggle::before {
+		transform: rotate(90deg) translateX(-3px);
+	}
+
+	.collapsible {
+		overflow: hidden;
+		transition: max-height 0.25s ease-out;
+	}
+
+	.collapsible-content {
+		overflow: hidden;
+		transition: max-height 0.25s ease-out;
+	}
+
+	.collapsed {
+		max-height: 0;
+		padding: 0;
+		border: none;
+	}
+</style>
+
+<script>
+	const collapsibles = document.querySelectorAll(".collapsible") as NodeListOf<HTMLDivElement>;
+	
+	collapsibles.forEach((collapsible) => {
+		const toggles = collapsible.parentElement?.previousElementSibling?.querySelectorAll(".availability-toggle-container .toggle") as NodeListOf<HTMLInputElement>;
+		const content = collapsible.querySelector(".collapsible-content") as HTMLDivElement;
+
+		console.log(toggles, content);
+
+		toggles.forEach((toggle) => {
+			toggle.addEventListener("change", () => {
+				if (toggle.checked) {
+					collapsible.classList.remove("collapsed");
+					content.classList.remove("collapsed");
+					// toggle the other toggles
+					toggles.forEach((otherToggle) => {
+						if (otherToggle !== toggle) {
+							otherToggle.checked = true;
+						}
+					});
+				} else {
+					collapsible.classList.add("collapsed");
+					content.classList.add("collapsed");
+
+					toggles.forEach((otherToggle) => {
+						if (otherToggle !== toggle) {
+							otherToggle.checked = false;
+						}
+					});
+				}
+			});
+		});
+	});
+</script>

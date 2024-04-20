@@ -1,0 +1,287 @@
+---
+import Base from "../Layouts/Base.astro";
+import AuthContainer from "../components/AuthContainer.astro";
+
+import { getSession } from "auth-astro/server";
+import { type Session } from "@auth/core/types";
+
+type ExtendedSession = {
+	team: string;
+	teamName: string;
+	teamImage: string;
+	user: {
+		role: string;
+	};
+};
+
+const session = (await getSession(Astro.request)) as Session & ExtendedSession;
+
+if (!session) {
+	const error = "authentication_error";
+	const errorDescription = "User session not found or expired. Please log in.";
+	const queryParams = new URLSearchParams({ error, errorDescription });
+	const redirectUrl = `/error?${queryParams.toString()}`;
+
+	return new Response(null, {
+		status: 302,
+		headers: new Headers({
+			Location: redirectUrl,
+		}),
+	});
+} else if (session.user.role === "guest") {
+	const error = "authorization_error";
+	const errorDescription =
+		"User does not have the necessary permissions to access this page. Please log in with an authorized account. If you believe this is an error, please contact your administrator.";
+	const queryParams = new URLSearchParams({ error, errorDescription });
+	const redirectUrl = `/error?${queryParams.toString()}`;
+
+	return new Response(null, {
+		status: 302,
+		headers: new Headers({
+			Location: redirectUrl,
+		}),
+	});
+}
+
+import { db, User, Organization } from "astro:db";
+import { like } from "astro:db";
+
+let users = await db.select().from(User).where(like(User.team, session.team));
+let team = (await db.select().from(Organization).where(like(Organization.team, session.team)))[0];
+if (!team.lastSync) {
+	team.lastSync = new Date(0);
+}
+
+console.log(team);
+let slackUsers = users.filter((user) => user.role === "invited");
+
+let error = null;
+if (Astro.request.method === "POST") {
+	const data = await Astro.request.formData();
+	console.log(data);
+
+	if (data.has("refresh")) {
+		const localSlackUsers = await fetch("https://slack.com/api/users.list", {
+			headers: {
+				Authorization: `Bearer ${team.slackToken}`,
+			},
+		}).then((res) => res.json());
+
+		console.log(localSlackUsers);
+
+		if (!localSlackUsers.ok) {
+			return new Response("Error fetching users from slack", { status: 500 });
+		}
+
+		// remove the user from the slackUsers list if they have an account
+		users.forEach((user) => {
+			localSlackUsers.members = localSlackUsers.members.filter((slackUser: any) => slackUser.profile.email !== user.email);
+		});
+
+		for (const slackUser of localSlackUsers.members) {
+			await db.insert(User).values({
+				team: session.team,
+				name: slackUser.name,
+				email: slackUser.profile.email || "",
+				image: slackUser.profile.image_192,
+				role: "invited",
+			});
+
+			slackUsers.push({
+				userId: "",
+				team: session.team,
+				name: slackUser.name,
+				email: slackUser.profile.email,
+				image: slackUser.profile.image_192,
+				role: "invited",
+			});
+		}
+
+		await db.update(Organization).set({ lastSync: new Date() }).where(like(Organization.team, session.team));
+	} else if (data.has("delete")) {
+		const userId = data.get("delete") as string;
+		if (session.user.id !== userId && session.user.role === "admin") {
+			console.log("deleting user", userId);
+			console.log(session.user.id, userId, session.user.id === userId)
+			await db.delete(User).where(like(User.userId, userId));
+			users = users.filter((user) => user.userId !== userId);
+			slackUsers = slackUsers.filter((user) => user.userId !== userId);
+		} else {
+			error = "You can't delete yourself";
+		}
+	}
+}
+---
+
+<Base title="Dashboard">
+	<section>
+		<AuthContainer />
+	</section>
+
+	<section>
+		<p>
+			In your organization {session.teamName} there are currently {users.length}
+			users who have logged into MagicSnap. {slackUsers.length}
+			users are in your Slack workspace and haven't created an acount.
+		</p>
+	</section>
+	{
+		(session.user.role === "admin" && (team.lastSync.getTime() < Date.now() - 60 * 60 * 1000) && 
+			(
+				<section>
+					<form method="post" style="background: transparent">
+						<button name="refresh" type="submit" value="true" style="margin-top: 0;">Refresh the users from slack workspace</button>
+						<span>This only needs to be done if you just created an acount or if new users have join your slack workspace</span>
+					</form>
+				</section>
+			)
+		)
+	}
+	{
+		(session.user.role === "admin" && (team.lastSync.getTime() > Date.now() - 60 * 60 * 1000) &&
+			(
+				<section>
+					<p>You have already refreshed the users in the last hour so you need to wait
+						{Math.round((team.lastSync.getTime() - Date.now() + 60 * 60 * 1000)/1000/60)}
+						minutes until {new Date(team.lastSync.getTime() + 60 * 60 * 1000).toLocaleTimeString([], { hour: 'numeric', minute: 'numeric' })}
+						to refresh the users again.
+					</p>
+				</section>
+			)
+		)
+	}
+	<section class="users">
+		{
+			error && (
+				<h3 style="color: red; text-align: center;">Error: {error}</h3>
+			)
+		}
+		<table>
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Email</th>
+					<th>Image</th>
+					<th>Role</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td colspan="5" class="info"><h3>Users with an acount</h3></td>
+				</tr>
+
+				{
+					users.map(({ userId, team, name, email, image, role }) => (
+						<tr>
+							<td>{name}</td>
+							<td>{email || "N/A"}</td>
+							<td>
+								<img src=`${image}` alt="" class="profile-pic"/>
+							</td>
+							<td>{role}</td>
+							<td>
+								<div class="actions">
+									<form method="post" style="background: transparent; display: flex">
+										<button name="delete" type="submit" value={userId} style="margin-top: 0;">Delete</button>
+									</form>
+								</div>
+							</td>
+						</tr>
+					))
+				}
+
+				<tr>
+					<td colspan="5" class="info"><h3>Users without an acount</h3></td>
+				</tr>
+
+				{
+					slackUsers.map(({ name, email, image, role }) => (
+						<tr>
+							<td>{name}</td>
+							<td>{email || "N/A"}</td>
+							<td>
+								<img src=`${image}` alt="" class="profile-pic"/>
+							</td>
+							<td>{role}</td>
+						</tr>
+					))
+				}
+			</tbody>
+		</table>
+	</section>
+</Base>
+
+<style>
+	table {
+		width: 100%;
+		border: 0.1rem solid #ddd;
+	}
+
+	th,
+	td {
+		padding: 1rem;
+		border-bottom: 0.1rem solid #ddd;
+	}
+
+    .profile-pic {
+        width: 6rem;
+        border-radius: 50%;
+    }
+
+	table {
+		border: 0.1rem solid #ddd;
+		table-layout: auto;
+		transform: translateX(calc((100% - 76rem) / 2));
+	}
+
+	@media only screen and (max-width: 760px),
+	(min-device-width: 768px) and (max-device-width: 1024px)  {
+
+		/* Force table to not be like tables anymore */
+		table, thead, tbody, th, td, tr { 
+			display: block; 
+		}
+
+		table {
+			transform: none;
+		}
+
+		/* Hide table headers (but not display: none;, for accessibility) */
+		thead tr { 
+			position: absolute;
+			top: -9999px;
+			left: -9999px;
+		}
+		
+		td { 
+			/* Behave  like a "row" */
+			border: none;
+			border-bottom: 1px solid #eee; 
+			position: relative;
+			padding-left: 50%; 
+		}
+		
+		td:before { 
+			/* Now like a table header */
+			position: absolute;
+			/* Top/left values mimic padding */
+			top: 6px;
+			left: 6px;
+			width: 100%; 
+			padding-right: 10px; 
+			white-space: nowrap;
+		}
+		
+		/*
+		Label the data
+		*/
+		td:nth-of-type(1):before { content: "Name"; }
+		td:nth-of-type(1).info:before { content: ""; }
+		td:nth-of-type(1).info { padding-left: 15%; padding-right: 15%; text-align: center; }
+		td:nth-of-type(2):before { content: "Email"; }
+		td:nth-of-type(3):before { content: "Image"; }
+		td:nth-of-type(4):before { content: "Role"; }
+		td:nth-of-type(4) { border-bottom: 0.25rem solid #ddd; }
+	}
+</style>

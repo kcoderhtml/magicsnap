@@ -1,0 +1,143 @@
+---
+interface Props {
+	eventID: string;
+	selected: string;
+}
+
+const { eventID, selected } = Astro.props;
+---
+
+<div class="threeWayToggle-container">
+	<span id="default-selected">{selected}</span>
+	<div>
+		<input
+			id=`${eventID}-yes`
+			name=`eventID-${eventID}`
+			type="radio"
+			checked={selected === "yes"}
+		/>
+		<label for=`${eventID}-yes`>Yes</label>
+	</div>
+
+	<div>
+		<input
+			id=`${eventID}-maybe`
+			name=`eventID-${eventID}`
+			type="radio"
+			checked={selected === "maybe"}
+		/>
+		<label for=`${eventID}-maybe`>Maybe</label>
+	</div>
+
+	<div>
+		<input
+			id=`${eventID}-no`
+			name=`eventID-${eventID}`
+			type="radio"
+			checked={selected === "no"}
+		/>
+		<label for=`${eventID}-no`>No</label>
+	</div>
+
+	<form method="post">
+		<input type="text" name="eventID" class="hidden" value=`${eventID}` />
+		<input type="text" name="selected" class="hidden" />
+		<input type="hidden" name="availability" value="true" />
+
+		<input
+			type="submit"
+			style="display: none"
+			id=`${eventID}-submit`
+			name=`${eventID}-submit`
+			value="Update Availability?"
+		/>
+	</form>
+</div>
+
+<style>
+	.threeWayToggle-container {
+		display: flex;
+		justify-content: space-around;
+	}
+
+	.threeWayToggle-container > div {
+		flex: 1;
+		text-align: center; /* Center text within boxes */
+		cursor: pointer; /* Make the entire box clickable */
+	}
+
+	input[type="radio"] {
+		display: none;
+	}
+
+	input[type="radio"]:checked + label {
+		color: red;
+	}
+
+	/* Target the label and its sibling radio button (the + symbol) */
+	label,
+	label + input[type="radio"] {
+		cursor: pointer;
+		line-height: 3em;
+		margin: 0;
+	}
+
+	form {
+		display: flex;
+		background: transparent;
+		flex-direction: row;
+	}
+
+	#default-selected {
+		display: none;
+	}
+
+	input[type="submit"] {
+		margin: 0;
+		padding: 0;
+		border: none;
+		text-decoration: underline;
+	}
+
+	.hidden {
+		display: none;
+		margin: 0;
+		padding: 0;
+		border: none;
+	}
+</style>
+
+<script>
+	const threeWayToggleContainers = document.querySelectorAll(
+		".threeWayToggle-container"
+	);
+
+	threeWayToggleContainers.forEach((container) => {
+		const radioButtons = container.querySelectorAll("input[type=radio]");
+		const submitButton = container.querySelector(
+			"input[type=submit"
+		) as HTMLInputElement;
+		const selectedInput = container.querySelector(
+			"input[name=selected]"
+		) as HTMLInputElement;
+		const defaultSelected =
+			container.querySelector("#default-selected")?.textContent;
+
+		if (submitButton && selectedInput) {
+			radioButtons.forEach((radioButton) => {
+				radioButton.addEventListener("change", (event) => {
+					const selected = (event.target as HTMLInputElement).id;
+					console.log(selected.split("-")[1]);
+					console.log(defaultSelected);
+					if (selected.split("-")[1] != defaultSelected) {
+						submitButton.style.display = "block";
+						selectedInput.value = selected.split("-")[1];
+					} else {
+						submitButton.style.display = "none";
+						selectedInput.value = "";
+					}
+				});
+			});
+		}
+	});
+</script>

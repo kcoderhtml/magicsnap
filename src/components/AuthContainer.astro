@@ -1,0 +1,117 @@
+---
+import type { Session } from "@auth/core/types";
+import { Auth, SignIn, SignOut } from "auth-astro/components";
+
+type ExtendedSession = {
+	team: string;
+	teamName: string;
+	teamImage: string;
+	user: {
+		role: string;
+	};
+};
+---
+
+<div>
+	<Auth>
+		{
+			(session: Session & ExtendedSession) => {
+				if (session) {
+					return (
+						<div class="signed-in-container">
+							<div class="top">
+								<a href="dashboard">
+									<img src={`${session.user?.image}`} alt="" class=`${session.user.role == "admin" ? "admin" : null}` />
+								</a>
+								<div class="text-centered">
+									<p>
+										Welcome,{" "}
+										{session.user.role == "user" ? null : session.user.role}{" "}
+										{session.user?.name}!
+									</p>
+									<p>{session.user?.email}</p>
+								</div>
+								<SignOut params={{ callbackUrl: "/" }}>Sign Out</SignOut>
+							</div>
+							<div class="bottom text-centered">
+								<h2>{session.teamName}</h2>
+								<nav>
+									<a href="/dashboard" class="nav">
+										Dashboard
+									</a>
+									/{" "}
+									<a href="/users" class="nav">
+										User Management
+									</a>
+									/{" "}
+									<a href="/settings" class="nav">
+										Settings
+									</a>
+								</nav>
+							</div>
+						</div>
+					);
+				} else {
+					return (
+						<div class="signed-out-container">
+							<SignIn provider="slack" options={{ callbackUrl: "/dashboard" }}>
+								Sign In
+							</SignIn>
+						</div>
+					);
+				}
+			}
+		}
+	</Auth>
+</div>
+
+<style>
+	img {
+		width: 10rem;
+		border-radius: 50%;
+	}
+
+	.admin {
+		border: 0.35rem ridge red;
+	}
+
+	button {
+		margin: 0;
+	}
+
+	.signed-in-container {
+		border: 0.1rem solid #ccc; /* Adds a border around the content */
+		border-radius: 1rem; /* Creates rounded corners */
+		padding: 1.5rem;
+	}
+
+	.signed-in-container .top {
+		display: flex; /* Maintains row layout */
+		align-items: center; /* Aligns content vertically */
+		flex-direction: row; /* Ensures items are displayed in a row */
+		justify-content: space-between;
+		border-bottom: 0.1rem solid #ccc;
+	}
+
+	.signed-in-container .bottom a {
+		text-decoration: underline;
+	}
+
+	.signed-out-container {
+		display: flex; /* Maintains row layout */
+		align-items: center; /* Aligns content vertically */
+		flex-direction: row; /* Ensures items are displayed in a row */
+		border-radius: 1rem; /* Creates rounded corners */
+		border: 0.1rem solid #ccc; /* Adds a border around the content */
+		justify-content: center;
+		padding: 1rem;
+	}
+
+	.signed-out-container button {
+		border: none;
+	}
+
+	.text-centered {
+		text-align: center;
+	}
+</style>

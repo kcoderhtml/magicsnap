@@ -3,6 +3,7 @@ import "normalize.css";
 import "magick.css";
 
 import Base from "../Layouts/Base.astro";
+import AuthContainer from "../components/AuthContainer.astro";
 ---
 
 <Base title="MagicSnap">
@@ -24,11 +25,14 @@ import Base from "../Layouts/Base.astro";
 	<section>
 		<h2>How do I join?</h2>
 		<p>
-			Right now MagicSnap is in alpha and is not open to the public. If you are
-			interested in joining the alpha, please reach out to me on
+			Right now MagicSnap is in alpha and isn't quite ready for active use. If
+			you are interested in joining any way, please reach out to me on
 			<u><a href="https://discord.gg/NGWFZg5Fgn">Discord</a></u> and I will get you
-			added to the alpha list!
+			and your team setup with an account!
 		</p>
+	</section>
+	<section>
+		<AuthContainer />
 	</section>
 	<section>
 		<h2>Features</h2>
@@ -52,18 +56,26 @@ import Base from "../Layouts/Base.astro";
 							>Allows you to sign in with slack and auto asigns admins based on
 							slack admin status.</td
 						>
-						<td>WIP - in active progress</td>
+						<td>Fully Functional!</td>
+					</tr>
+					<tr>
+						<td>Team Creation</td>
+						<td>Allows you to create a team and add team members.</td>
+						<td
+							>Fully functional but currently a manual process; working on
+							transitioning to a auto invite system</td
+						>
 					</tr>
 					<tr>
 						<td>Event Scheduling</td>
 						<td>Allows teams to schedule and manage events and competitions.</td
 						>
-						<td>WIP - in active progress</td>
+						<td>Finished! Awaiting user feedback</td>
 					</tr>
 					<tr>
 						<td>Team Management</td>
 						<td>Allows teams to manage their team members and roles.</td>
-						<td>Next up</td>
+						<td>WIP - Active Progress</td>
 					</tr>
 					<tr>
 						<td>FRC Dashboard Integration</td>

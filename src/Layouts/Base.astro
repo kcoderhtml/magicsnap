@@ -21,16 +21,63 @@ const { title } = Astro.props;
 	</head>
 	<body>
 		<main>
-			<header><h1>{title}</h1></header>
+			<header>
+				<h1>{title}</h1>
+			</header>
 
 			<slot />
-
-			<footer>
-				<p>
-					&copy; {date.getFullYear()}
-					<a href="https://github.com/kcoderhtml">Kieran Klukas</a>
-				</p>
-			</footer>
 		</main>
+		<footer>
+			<p>
+				&copy; {date.getFullYear()}
+				<a href="https://github.com/kcoderhtml">Kieran Klukas</a>
+			</p>
+		</footer>
 	</body>
 </html>
+
+<style>
+	/* make the footer be at the bottom of the page if there isn't enough content to push it down */
+	body {
+		display: flex;
+		flex-direction: column;
+		min-height: 100vh;
+	}
+</style>
+
+<style is:global>
+	form input[type="date"],
+	form input[type="time"] {
+		-webkit-appearance: none;
+		-moz-appearance: none;
+		appearance: none;
+		box-shadow: none;
+		box-sizing: inherit;
+		border: none;
+		border-bottom-style: none;
+		border-bottom-color: currentcolor;
+		margin-bottom: 1.6rem;
+		padding: 0.4rem 1rem;
+		color: var(--fg);
+		background-color: transparent;
+		border-bottom: 1px solid var(--fg);
+		border-radius: 0;
+		color: var(--form-fg);
+		caret-color: var(--form-fg);
+	}
+
+	form input[type="date"]:focus,
+	form input[type="time"]:focus {
+		border-bottom: 2px solid var(--fg);
+		margin-bottom: calc(1.6rem - 1px);
+	}
+
+	input:focus,
+	input.form-control:focus {
+		outline: none !important;
+		outline-width: 0 !important;
+		box-shadow: none;
+		-moz-box-shadow: none;
+		-webkit-box-shadow: none;
+	}
+</style>

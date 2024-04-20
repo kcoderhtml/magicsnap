@@ -1,0 +1,40 @@
+---
+import Base from "../Layouts/Base.astro";
+
+// get the error from the redirect
+const params = new URLSearchParams(Astro.request.url.split("?")[1]);
+
+const errorShort = params.get("error");
+const error = params.get("errorDescription");
+---
+
+<Base title=`Error | ${errorShort}`>
+	<section>
+		<p>{error}</p>
+	</section>
+	<section>
+		<p id="redirect">Redirecting Home</p>
+	</section>
+</Base>
+
+<style>
+	section {
+		text-align: center;
+	}
+</style>
+
+<script>
+	// countdown to redirect
+	let count = 5;
+	const redirect = document.getElementById("redirect");
+	if (redirect) {
+		const interval = setInterval(() => {
+			count--;
+			redirect.textContent = `Redirecting Home in ${count} seconds`;
+			if (count === 0) {
+				clearInterval(interval);
+				window.location.href = "/";
+			}
+		}, 1000);
+	}
+</script>
