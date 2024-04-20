@@ -1,5 +1,6 @@
 ---
 import Base from "../Layouts/Base.astro";
+import ThreeWayToggle from "../components/ThreeWayToggle.astro";
 import AuthContainer from "../components/AuthContainer.astro";
 
 import { getSession } from "auth-astro/server";
@@ -46,24 +47,23 @@ if (!session) {
 import { db, User, Organization } from "astro:db";
 import { like } from "astro:db";
 
-let users = await db.select().from(User).where(like(User.team, session.team));
-
 let error = null;
 if (Astro.request.method === "POST") {
 	const data = await Astro.request.formData();
-	console.log(data);
-	if (data.has("delete")) {
-		const userId = data.get("delete") as string;
-		if (session.user.id !== userId && session.user.role === "admin") {
-			console.log("deleting user", userId);
-			console.log(session.user.id, userId, session.user.id === userId)
-			await db.delete(User).where(like(User.userId, userId));
-			users = users.filter((user) => user.userId !== userId);
+	if (data.has("perms") && session.user.role === "admin") {
+		const userId = data.get("eventID") as string;
+		const role = data.get("selected") as string;
+		if ((role === "admin" || role === "user" || role === "guest") && userId !== session.user.id) {
+			await db.update(User).set({ role }).where(like(User.userId, userId));
 		} else {
-			error = "You can't delete yourself";
+			error = "You cannot change your own role.";
 		}
+	} else {
+		error = "You do not have the necessary permissions to update user roles.";
 	}
 }
+
+let users = await db.select().from(User).where(like(User.team, session.team));
 ---
 
 <Base title="Dashboard">
@@ -90,7 +90,11 @@ if (Astro.request.method === "POST") {
 					<th>Email</th>
 					<th>Image</th>
 					<th>Role</th>
-					<th>Actions</th>
+					{
+						session.user.role === "admin" && (
+							<th>Actions</th>
+						)
+					}
 				</tr>
 			</thead>
 			<tbody>
@@ -103,13 +107,31 @@ if (Astro.request.method === "POST") {
 								<img src=`${image}` alt="" class="profile-pic"/>
 							</td>
 							<td>{role}</td>
-							<td>
-								<div class="actions">
-									<form method="post" style="background: transparent; display: flex">
-										<button name="delete" type="submit" value={userId} style="margin-top: 0;">Delete</button>
-									</form>
-								</div>
-							</td>
+							{
+								session.user.role === "admin" && (
+									<td>
+										<div class="actions">
+											<div class="non-mobile">
+												<form method="post" style="background: transparent; display: flex">
+													<select name="perms" id="perms" data-selected={role}>
+														<option value="admin">Admin</option>
+														<option value="user">User</option>
+														<option value="guest">Guest</option>
+													</select>
+													<button type="submit" name="delete" value={userId} disabled>Update Perms</button>
+												</form>
+											</div>
+											
+											<div class="mobile">
+												<h3>Update User Perms</h3>
+												<form method="post" style="background: transparent; display: flex" >
+													<ThreeWayToggle eventID={userId} selected={role} items={["admin", "user", "guest"]} name="Perms" />
+												</form>
+											</div>
+										</div>
+									</td>
+								)
+							}
 						</tr>
 					))
 				}
@@ -140,7 +162,21 @@ if (Astro.request.method === "POST") {
 	table {
 		border: 0.1rem solid #ddd;
 		table-layout: auto;
-		transform: translateX(calc(max(0, (100% - 76rem) / -1.5)));
+	}
+
+	.mobile {
+		display: none;
+		flex-direction: column;
+	}
+	.mobile h3 {
+		text-align: center;
+		margin: 0;
+		padding: 0;
+	}
+
+	.mobile form {
+		margin: 0;
+		padding: 0;
 	}
 
 	@media only screen and (max-width: 760px),
@@ -169,6 +205,11 @@ if (Astro.request.method === "POST") {
 			position: relative;
 			padding-left: 50%; 
 		}
+
+		th,
+		td {
+			max-width: 100%;
+		}
 		
 		td:before { 
 			/* Now like a table header */
@@ -188,7 +229,9 @@ if (Astro.request.method === "POST") {
 		td:nth-of-type(2):before { content: "Email"; }
 		td:nth-of-type(3):before { content: "Image"; }
 		td:nth-of-type(4):before { content: "Role"; }
-		td:nth-of-type(4) { border-bottom: 0.25rem solid #ddd; }
+		td:nth-of-type(5) .non-mobile { display: none; }
+		td:nth-of-type(5) .mobile { display: flex; }
+		td:nth-of-type(5) { border-bottom: 0.25rem solid #ddd; padding-left: 15%; padding-right: 15%; display: flex; justify-content: center; }
 	}
 
 	.warning {
@@ -197,4 +240,34 @@ if (Astro.request.method === "POST") {
 		margin: 0;
 		padding: 0;
 	}
+
+	.actions {
+		display: flex;
+		align-items: center;
+	}
+	.actions button {
+		margin-top: 0;
+	}
+	.actions select {
+		margin-bottom: 0.25rem;
+	}
 </style>
+
+<script>
+	document.querySelectorAll('[data-selected]').forEach(e => {
+		(e as HTMLSelectElement).value = (e as HTMLSelectElement).dataset.selected ?? '';
+
+		e.addEventListener('change', () => {
+			const form = e.closest('form');
+			const button = form?.querySelector('button');
+
+			if (button) {	
+				if ((e as HTMLSelectElement).value !== (e as HTMLSelectElement).dataset.selected) {
+					button.disabled = false;
+				} else {
+					button.disabled = true;
+				}
+			}
+		});
+	});
+</script>
