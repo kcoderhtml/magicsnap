@@ -1,30 +1,30 @@
 {
-	"name": "magicsnap",
-	"type": "module",
-	"version": "0.0.1",
-	"scripts": {
-		"dev": "astro dev",
-		"start": "astro dev",
-		"build": "astro check && astro build --remote",
-		"preview": "astro preview",
-		"astro": "astro"
-	},
-	"dependencies": {
-		"@astrojs/check": "^0.5.10",
-		"@astrojs/db": "^0.10.3",
-		"@astrojs/netlify": "^5.2.0",
-		"@astrojs/node": "^8.2.5",
-		"@astrojs/tailwind": "^5.1.0",
-		"@auth/core": "^0.18.6",
-		"astro": "^4.5.10",
-		"auth-astro": "^4.1.1",
-		"jwt-decode": "^4.0.0",
-		"magick.css": "^1.0.5",
-		"normalize.css": "^8.0.1",
-		"tailwindcss": "^3.4.2",
-		"typescript": "^5.4.3"
-	},
-	"devDependencies": {
-		"@types/bun": "^1.0.11"
-	}
+  "name": "magicsnap",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro check && astro build --remote",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.5.10",
+    "@astrojs/db": "^0.10.3",
+    "@astrojs/netlify": "^5.2.0",
+    "@astrojs/node": "^8.2.5",
+    "@astrojs/tailwind": "^5.1.0",
+    "@auth/core": "^0.18.6",
+    "astro": "^4.5.10",
+    "auth-astro": "^4.1.1",
+    "jwt-decode": "^4.0.0",
+    "magick.css": "^1.0.5",
+    "normalize.css": "^8.0.1",
+    "tailwindcss": "^3.4.2",
+    "typescript": "^5.4.3"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.0.11"
+  }
 }
