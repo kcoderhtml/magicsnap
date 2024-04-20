@@ -84,7 +84,6 @@ export const GET: APIRoute = async ({ params, request }) => {
         team: slackData.team.id,
         name: slackData.team.name,
         image: teamProfileData.team.icon.image_132,
-        slackToken: slackData.access_token,
     });
 
     const invite = (await db.select().from(Invite).where(like(Invite.verificationCode, state)))[0];
@@ -95,6 +94,4 @@ export const GET: APIRoute = async ({ params, request }) => {
             Location: `/join/${state}?verification=${invite.installationToken}`,
         }),
     });
-
-    return new Response(null);
 }
