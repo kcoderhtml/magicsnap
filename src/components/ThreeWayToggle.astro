@@ -2,54 +2,46 @@
 interface Props {
 	eventID: string;
 	selected: string;
+	items?: string[];
+	name?: string;
 }
 
-const { eventID, selected } = Astro.props;
+const {
+	eventID,
+	selected,
+	items = ["yes", "maybe", "no"],
+	name = "Availability",
+} = Astro.props;
 ---
 
 <div class="threeWayToggle-container">
 	<span id="default-selected">{selected}</span>
-	<div>
-		<input
-			id=`${eventID}-yes`
-			name=`eventID-${eventID}`
-			type="radio"
-			checked={selected === "yes"}
-		/>
-		<label for=`${eventID}-yes`>Yes</label>
-	</div>
 
-	<div>
-		<input
-			id=`${eventID}-maybe`
-			name=`eventID-${eventID}`
-			type="radio"
-			checked={selected === "maybe"}
-		/>
-		<label for=`${eventID}-maybe`>Maybe</label>
-	</div>
-
-	<div>
-		<input
-			id=`${eventID}-no`
-			name=`eventID-${eventID}`
-			type="radio"
-			checked={selected === "no"}
-		/>
-		<label for=`${eventID}-no`>No</label>
-	</div>
+	{
+		items.map((item) => (
+			<div>
+				<input
+					id={`${eventID}-${item}`}
+					name={`eventID-${eventID}`}
+					type="radio"
+					checked={selected === item}
+				/>
+				<label for={`${eventID}-${item}`}>{item}</label>
+			</div>
+		))
+	}
 
 	<form method="post">
 		<input type="text" name="eventID" class="hidden" value=`${eventID}` />
 		<input type="text" name="selected" class="hidden" />
-		<input type="hidden" name="availability" value="true" />
+		<input type="hidden" name={name.toLowerCase()} value="true" />
 
 		<input
 			type="submit"
 			style="display: none"
 			id=`${eventID}-submit`
 			name=`${eventID}-submit`
-			value="Update Availability?"
+			value=`Update ${name}?`
 		/>
 	</form>
 </div>
