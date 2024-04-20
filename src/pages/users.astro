@@ -99,6 +99,7 @@ if (Astro.request.method === "POST") {
 		}
 
 		await db.update(Organization).set({ lastSync: new Date() }).where(like(Organization.team, session.team));
+		team.lastSync = new Date();
 	} else if (data.has("delete")) {
 		const userId = data.get("delete") as string;
 		if (session.user.id !== userId && session.user.role === "admin") {
