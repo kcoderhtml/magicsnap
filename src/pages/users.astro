@@ -80,6 +80,7 @@ if (Astro.request.method === "POST") {
 
 		for (const slackUser of localSlackUsers.members) {
 			await db.insert(User).values({
+				userId: slackUser.id,
 				team: session.team,
 				name: slackUser.name,
 				email: slackUser.profile.email || "",
@@ -88,7 +89,7 @@ if (Astro.request.method === "POST") {
 			});
 
 			slackUsers.push({
-				userId: "",
+				userId: slackUser.id,
 				team: session.team,
 				name: slackUser.name,
 				email: slackUser.profile.email,
