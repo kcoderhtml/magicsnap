@@ -53,8 +53,6 @@ if (Astro.request.method === "POST") {
 	try {
 		const data = await Astro.request.formData();
 
-		console.log(data);
-
 		if (data.get("availability") != null) {
 			const eventID = data.get("eventID") as string;
 			const status = data.get("selected") as string;
@@ -482,8 +480,6 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 	collapsibles.forEach((collapsible) => {
 		const toggles = collapsible.parentElement?.previousElementSibling?.querySelectorAll(".availability-toggle-container .toggle") as NodeListOf<HTMLInputElement>;
 		const content = collapsible.querySelector(".collapsible-content") as HTMLDivElement;
-
-		console.log(toggles, content);
 
 		toggles.forEach((toggle) => {
 			toggle.addEventListener("change", () => {

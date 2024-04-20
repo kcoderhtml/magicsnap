@@ -127,8 +127,6 @@ const { eventID, selected } = Astro.props;
 			radioButtons.forEach((radioButton) => {
 				radioButton.addEventListener("change", (event) => {
 					const selected = (event.target as HTMLInputElement).id;
-					console.log(selected.split("-")[1]);
-					console.log(defaultSelected);
 					if (selected.split("-")[1] != defaultSelected) {
 						submitButton.style.display = "block";
 						selectedInput.value = selected.split("-")[1];

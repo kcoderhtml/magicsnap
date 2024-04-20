@@ -1,5 +1,4 @@
-import { defineDb, defineTable, column } from 'astro:db';
-
+import { defineDb, defineTable, column } from "astro:db";
 
 const Organization = defineTable({
   columns: {
@@ -9,8 +8,8 @@ const Organization = defineTable({
   },
   indexes: {
     teamx: { on: ["team"], unique: true },
-  }
-})
+  },
+});
 
 const User = defineTable({
   columns: {
@@ -23,8 +22,8 @@ const User = defineTable({
   },
   indexes: {
     userIdx: { on: ["userId"], unique: true },
-  }
-})
+  },
+});
 
 const Event = defineTable({
   columns: {
@@ -40,8 +39,8 @@ const Event = defineTable({
   },
   indexes: {
     idx: { on: ["id"], unique: true },
-  }
-})
+  },
+});
 
 const Invite = defineTable({
   columns: {
@@ -51,8 +50,8 @@ const Invite = defineTable({
   },
   indexes: {
     verificationCodeIdx: { on: ["verificationCode"], unique: true },
-  }
-})
+  },
+});
 
 // https://astro.build/db/config
 export default defineDb({

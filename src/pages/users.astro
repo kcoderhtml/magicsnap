@@ -51,12 +51,9 @@ let users = await db.select().from(User).where(like(User.team, session.team));
 let error = null;
 if (Astro.request.method === "POST") {
 	const data = await Astro.request.formData();
-	console.log(data);
 	if (data.has("delete")) {
 		const userId = data.get("delete") as string;
 		if (session.user.id !== userId && session.user.role === "admin") {
-			console.log("deleting user", userId);
-			console.log(session.user.id, userId, session.user.id === userId)
 			await db.delete(User).where(like(User.userId, userId));
 			users = users.filter((user) => user.userId !== userId);
 		} else {
