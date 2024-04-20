@@ -162,7 +162,6 @@ let users = await db.select().from(User).where(like(User.team, session.team));
 	table {
 		border: 0.1rem solid #ddd;
 		table-layout: auto;
-		transform: translateX(calc(max(0, (100% - 76rem) / -1.5)));
 	}
 
 	.mobile {
