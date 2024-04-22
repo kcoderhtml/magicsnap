@@ -29,6 +29,12 @@ if (Astro.request.method === "POST") {
 		error =
 			"You do not have the necessary permissions to update the team name.";
 	}
+
+	if (data.has("delete") && session.user.role === "admin") {
+		await db.delete(Organization).where(like(Organization.team, session.team));
+	} else {
+		error = "You do not have the necessary permissions to delete the team.";
+	}
 }
 
 import { db, like, Organization } from "astro:db";
@@ -55,6 +61,15 @@ const team = (
 
 	<section>
 		<div class="settings-container">
+			<form method="post">
+				<button type="submit" name="delete">Delete Team</button>
+				<label for="delete"
+					>This will delete your team, events, settings, and team members. This <b
+						>will not</b
+					> however do anything to your slack workspace.</label
+				>
+			</form>
+
 			<form method="post">
 				<input
 					type="text"
