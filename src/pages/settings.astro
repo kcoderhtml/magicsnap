@@ -51,15 +51,15 @@ const team = (
 		<AuthContainer />
 	</section>
 
-	{
-		error && (
-			<section>
-				<h3 class="warning">Error: {error}</h3>
-			</section>
-		)
-	}
-
 	<section>
+		{
+			error && (
+				<section>
+					<h3 class="warning">Error: {error}</h3>
+				</section>
+			)
+		}
+
 		<div class="settings-container">
 			<form method="post">
 				<button type="submit" name="delete">Delete Team</button>
@@ -88,22 +88,29 @@ const team = (
 				>
 			</form>
 		</div>
-
-		<style>
-			form {
-				background: transparent;
-				display: flex;
-				flex-direction: column;
-			}
-
-			.settings-container {
-				display: flex;
-				flex-direction: column;
-				align-items: center;
-			}
-		</style>
 	</section>
 </Base>
+
+<style>
+	form {
+		background: transparent;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.settings-container {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.warning {
+		color: red;
+		text-align: center;
+		margin: 0;
+		padding: 0;
+	}
+</style>
 
 <script>
 	document.querySelectorAll("[data-value]").forEach((e) => {
