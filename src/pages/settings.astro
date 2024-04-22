@@ -1,0 +1,119 @@
+---
+import Base from "../Layouts/Base.astro";
+import AuthContainer from "../components/AuthContainer.astro";
+
+import { getSession } from "auth-astro/server";
+import { type Session } from "@auth/core/types";
+
+type ExtendedSession = {
+	team: string;
+	teamName: string;
+	teamImage: string;
+	user: {
+		role: string;
+	};
+};
+
+const session = (await getSession(Astro.request)) as Session & ExtendedSession;
+let error = "";
+
+if (Astro.request.method === "POST") {
+	const data = await Astro.request.formData();
+	if (data.has("updateName") && session.user.role === "admin") {
+		const name = data.get("name") as string;
+		await db
+			.update(Organization)
+			.set({ name })
+			.where(like(Organization.team, session.team));
+	} else {
+		error =
+			"You do not have the necessary permissions to update the team name.";
+	}
+}
+
+import { db, like, Organization } from "astro:db";
+const team = (
+	await db
+		.select()
+		.from(Organization)
+		.where(like(Organization.team, session.team))
+)[0];
+---
+
+<Base title="Settings">
+	<section>
+		<AuthContainer />
+	</section>
+
+	{
+		error && (
+			<section>
+				<h3 class="warning">Error: {error}</h3>
+			</section>
+		)
+	}
+
+	<section>
+		<div class="settings-container">
+			<form method="post">
+				<input
+					type="text"
+					name="name"
+					value={team.name}
+					data-value={team.name}
+				/>
+
+				<button type="submit" name="updateName" disabled
+					>Update Team Name</button
+				>
+
+				<label for="update"
+					>This will update your team name. This <b>will not</b> update your slack
+					workspace name.</label
+				>
+			</form>
+		</div>
+
+		<style>
+			form {
+				background: transparent;
+				display: flex;
+				flex-direction: column;
+			}
+
+			.settings-container {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+			}
+		</style>
+	</section>
+</Base>
+
+<script>
+	document.querySelectorAll("[data-value]").forEach((e) => {
+		console.log(e);
+		e.addEventListener("input", () => {
+			const form = e.closest("form");
+			const button = form?.querySelector("button");
+
+			console.log(e, form, button);
+
+			console.log(
+				(e as HTMLInputElement).value,
+				(e as HTMLInputElement).dataset.value
+			);
+
+			if (button) {
+				if (
+					(e as HTMLInputElement).value !==
+					(e as HTMLInputElement).dataset.value
+				) {
+					button.disabled = false;
+				} else {
+					button.disabled = true;
+				}
+			}
+		});
+	});
+</script>
