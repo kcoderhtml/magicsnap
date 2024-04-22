@@ -1,0 +1,178 @@
+---
+import Base from "../Layouts/Base.astro";
+import AuthContainer from "../components/AuthContainer.astro";
+
+import { getSession } from "auth-astro/server";
+import { type Session } from "@auth/core/types";
+
+type ExtendedSession = {
+	team: string;
+	teamName: string;
+	teamImage: string;
+	user: {
+		role: string;
+	};
+};
+
+const session = (await getSession(Astro.request)) as Session & ExtendedSession;
+if (!session) {
+	const error = "authentication_error";
+	const errorDescription = "User session not found or expired. Please log in.";
+	const queryParams = new URLSearchParams({ error, errorDescription });
+	const redirectUrl = `/error?${queryParams.toString()}`;
+
+	return new Response(null, {
+		status: 302,
+		headers: new Headers({
+			Location: redirectUrl,
+		}),
+	});
+} else if (session.user.role === "guest") {
+	const error = "authorization_error";
+	const errorDescription =
+		"User does not have the necessary permissions to access this page. Please log in with an authorized account. If you believe this is an error, please contact your administrator.";
+	const queryParams = new URLSearchParams({ error, errorDescription });
+	const redirectUrl = `/error?${queryParams.toString()}`;
+
+	return new Response(null, {
+		status: 302,
+		headers: new Headers({
+			Location: redirectUrl,
+		}),
+	});
+}
+
+let error = "";
+
+import { db, like, Organization, Event, User } from "astro:db";
+
+if (Astro.request.method === "POST") {
+	const data = await Astro.request.formData();
+	if (data.has("updateName") && session.user.role === "admin") {
+		const name = data.get("name") as string;
+		await db
+			.update(Organization)
+			.set({ name })
+			.where(like(Organization.team, session.team));
+	} else {
+		error =
+			"You do not have the necessary permissions to update the team name.";
+	}
+
+	if (data.has("delete") && session.user.role === "admin") {
+		await db.delete(Organization).where(like(Organization.team, session.team));
+		await db.delete(Event).where(like(Event.team, session.team));
+		await db.delete(User).where(like(User.team, session.team));
+
+		return new Response(null, {
+			status: 302,
+			headers: new Headers({
+				Location: "/signout",
+			}),
+		});
+	} else {
+		error = "You do not have the necessary permissions to delete the team.";
+	}
+}
+
+const team = (
+	await db
+		.select()
+		.from(Organization)
+		.where(like(Organization.team, session.team))
+)[0];
+---
+
+<Base title="Settings">
+	<section>
+		<AuthContainer />
+	</section>
+
+	<section>
+		{
+			error && (
+				<section>
+					<h3 class="warning">Error: {error}</h3>
+				</section>
+			)
+		}
+
+		<div class="settings-container">
+			<form method="post">
+				<button type="submit" name="delete">Delete Team</button>
+				<label for="delete"
+					>This will delete your team, events, settings, and team members. This <b
+						>will not</b
+					> however do anything to your slack workspace.</label
+				>
+			</form>
+
+			<form method="post">
+				<input
+					type="text"
+					name="name"
+					value={team.name}
+					data-value={team.name}
+				/>
+
+				<button type="submit" name="updateName" disabled
+					>Update Team Name</button
+				>
+
+				<label for="update"
+					>This will update your team name. This <b>will not</b> update your slack
+					workspace name.</label
+				>
+			</form>
+		</div>
+	</section>
+</Base>
+
+<style>
+	form {
+		background: transparent;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.settings-container {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.warning {
+		color: red;
+		text-align: center;
+		margin: 0;
+		padding: 0;
+	}
+</style>
+
+<script>
+	document.querySelectorAll("[data-value]").forEach((e) => {
+		console.log(e);
+		e.addEventListener("input", () => {
+			const form = e.closest("form");
+			const button = form?.querySelector("button");
+
+			console.log(e, form, button);
+
+			console.log(
+				(e as HTMLInputElement).value,
+				(e as HTMLInputElement).dataset.value
+			);
+
+			if (button) {
+				if (
+					(e as HTMLInputElement).value !==
+					(e as HTMLInputElement).dataset.value
+				) {
+					button.disabled = false;
+				} else {
+					button.disabled = true;
+				}
+			}
+		});
+	});
+</script>
