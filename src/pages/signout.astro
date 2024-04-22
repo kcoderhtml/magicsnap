@@ -1,0 +1,39 @@
+---
+import Base from "../Layouts/Base.astro";
+
+import { getSession } from "auth-astro/server";
+import { type Session } from "@auth/core/types";
+
+type ExtendedSession = {
+	team: string;
+	teamName: string;
+	teamImage: string;
+	user: {
+		role: string;
+	};
+};
+
+const session = (await getSession(Astro.request)) as Session & ExtendedSession;
+
+if (!session) {
+	return new Response(null, {
+		status: 302,
+		headers: new Headers({
+			Location: "/",
+		}),
+	});
+}
+---
+
+<Base title="Sign Out">
+	<div class="flex items-center justify-center h-screen">
+		<div class="text-center">
+			<h1 class="text-3xl font-bold">Signing out...</h1>
+		</div>
+	</div>
+</Base>
+
+<script>
+	import { signOut } from "auth-astro/client";
+	await signOut();
+</script>

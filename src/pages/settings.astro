@@ -44,6 +44,8 @@ if (!session) {
 
 let error = "";
 
+import { db, like, Organization, Event, User } from "astro:db";
+
 if (Astro.request.method === "POST") {
 	const data = await Astro.request.formData();
 	if (data.has("updateName") && session.user.role === "admin") {
@@ -59,12 +61,20 @@ if (Astro.request.method === "POST") {
 
 	if (data.has("delete") && session.user.role === "admin") {
 		await db.delete(Organization).where(like(Organization.team, session.team));
+		await db.delete(Event).where(like(Event.team, session.team));
+		await db.delete(User).where(like(User.team, session.team));
+
+		return new Response(null, {
+			status: 302,
+			headers: new Headers({
+				Location: "/signout",
+			}),
+		});
 	} else {
 		error = "You do not have the necessary permissions to delete the team.";
 	}
 }
 
-import { db, like, Organization } from "astro:db";
 const team = (
 	await db
 		.select()
