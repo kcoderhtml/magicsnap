@@ -10,10 +10,16 @@ export default defineConfig({
 			clientSecret: import.meta.env.SLACK_CLIENT_SECRET,
 			checks: ["pkce", "nonce"],
 			async profile(profile) {
+				profile["https://slack.com/team_id"] =
+					"slack-" + profile["https://slack.com/team_id"];
+
 				const role = await db
 					.select()
 					.from(User)
-					.where(like(User.userId, profile["https://slack.com/user_id"]));
+					.where(
+						like(User.userId, profile["https://slack.com/user_id"]) &&
+							like(User.team, profile["https://slack.com/team_id"])
+					);
 
 				if (role.length === 0) {
 					const users = await db
@@ -79,6 +85,8 @@ export default defineConfig({
 			clientSecret: import.meta.env.GITHUB_CLIENT_SECRET,
 			checks: ["pkce", "nonce"],
 			async profile(profile) {
+				profile.node_id = "github-" + profile.node_id;
+
 				const role = await db
 					.select()
 					.from(User)
