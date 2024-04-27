@@ -90,7 +90,7 @@ if (session && session.user.role === "guest") {
 						team's profile information.
 					</p>
 				</section>
-				<section class="slack-button">
+				<section class="signin-button">
 					<SignIn options={{ callbackUrl: `/join/${joinCode}` }}>
 						Connect your workspace
 					</SignIn>
@@ -108,7 +108,7 @@ if (session && session.user.role === "guest") {
 						you will be redirected to your team's dashboard as the team owner.
 					</p>
 				</section>
-				<section class="slack-button">
+				<section class="signin-button">
 					<SignIn options={{ callbackUrl: `/dashboard` }}>Sign In</SignIn>
 				</section>
 			</>
@@ -117,7 +117,7 @@ if (session && session.user.role === "guest") {
 </Base>
 
 <style>
-	.slack-button {
+	.signin-button {
 		display: flex;
 		justify-content: center;
 		margin-top: 5rem;
