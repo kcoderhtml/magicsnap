@@ -1,0 +1,180 @@
+---
+import Base from "../Layouts/Base.astro";
+import AuthContainer from "../components/AuthContainer.astro";
+
+import { getSession } from "auth-astro/server";
+import { type Session } from "@auth/core/types";
+
+type ExtendedSession = {
+	team: string;
+	teamName: string;
+	teamImage: string;
+	user: {
+		role: string;
+	};
+};
+
+const session = (await getSession(Astro.request)) as Session & ExtendedSession;
+
+if (!session) {
+	const error = "authentication_error";
+	const errorDescription = "User session not found or expired. Please log in.";
+	const queryParams = new URLSearchParams({ error, errorDescription });
+	const redirectUrl = `/error?${queryParams.toString()}`;
+
+	return new Response(null, {
+		status: 302,
+		headers: new Headers({
+			Location: redirectUrl,
+		}),
+	});
+} else if (session.user.role !== "admin") {
+	const error = "authorization_error";
+	const errorDescription =
+		"User does not have the necessary permissions to access this page. Please log in with an authorized account. If you believe this is an error, please contact your administrator.";
+	const queryParams = new URLSearchParams({ error, errorDescription });
+	const redirectUrl = `/error?${queryParams.toString()}`;
+
+	return new Response(null, {
+		status: 302,
+		headers: new Headers({
+			Location: redirectUrl,
+		}),
+	});
+}
+
+import { db, like, User } from "astro:db";
+let users = await db.select().from(User).where(like(User.team, session.team));
+
+let error: { ok: boolean; message: string } = { ok: false, message: "" };
+
+if (Astro.request.method === "POST") {
+	const data = await Astro.request.formData();
+	if (data.has("message") && session.user.role === "admin") {
+		const subject = data.get("subject") as string;
+		const message = data.get("message") as string;
+		const SendToUsers = data.getAll("users") as string[];
+
+		let userList = [];
+
+		if (data.has("all")) {
+			// get all users emails
+			userList = users.map((user) => ({ email: user.email, name: user.name }));
+		} else {
+			// get selected users emails
+			userList = users
+				.filter((user) => SendToUsers.includes(user.userId))
+				.map((user) => ({ email: user.email, name: user.name }));
+		}
+
+		const emailData = {
+			to: userList,
+			from: "annoucements@magicsnap.org",
+			subject: subject,
+			text: message,
+		};
+
+		const response = await fetch("https://email.magicsnap.org/api/email", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: process.env.EMAIL_API_KEY || "",
+			},
+			body: JSON.stringify(emailData),
+		});
+
+		if (!response.ok) {
+			error = {
+				ok: false,
+				message: `Failed to send message to users. ${response.status} ${response.statusText}`,
+			};
+			console.log(response.status, response.statusText, await response.text());
+		} else {
+			error = {
+				ok: true,
+				message: `Message sent successfully to ${userList.length} users.`,
+			};
+		}
+	} else {
+		error = {
+			ok: false,
+			message: "You do not have the necessary permissions to send messages.",
+		};
+	}
+}
+---
+
+<Base title="Messages">
+	<section>
+		<AuthContainer />
+	</section>
+
+	<section>
+		{error.ok && error.message.length > 0 && <h3>{error.message}</h3>}
+		{
+			!error.ok && error.message.length > 0 && (
+				<h3 style="color: red">{error.message}</h3>
+			)
+		}
+		<form method="post">
+			<label for="subject">Subject</label>
+			<input type="text" id="subject" name="subject" required />
+			<label for="message">Message</label>
+			<textarea id="message" name="message" required></textarea>
+			<select name="users" id="users" multiple>
+				{users.map((user) => <option value={user.userId}>{user.name}</option>)}
+			</select>
+
+			<div>
+				<input type="checkbox" id="all" name="all" value="all" />
+				<label for="all">Send to all users</label>
+			</div>
+
+			<button type="submit" name="message" disabled>Send</button>
+		</form>
+	</section>
+</Base>
+
+<style>
+	form {
+		display: flex;
+		flex-direction: column;
+		border-radius: 0.45rem;
+	}
+
+	form div {
+		display: flex;
+		align-items: center;
+		align-self: center;
+	}
+</style>
+
+<script>
+	const form = document.querySelector("form");
+	const submitButton = form?.querySelector(
+		"button[type='submit']"
+	) as HTMLButtonElement | null; // Target the submit button and assert the correct type
+
+	form?.addEventListener("change", () => {
+		const subjectInput = document.getElementById("subject") as HTMLInputElement;
+		const messageInput = document.getElementById(
+			"message"
+		) as HTMLTextAreaElement;
+		const all = document.querySelector<HTMLInputElement>("#all");
+		const users = document.getElementById("users") as HTMLSelectElement;
+
+		// Check if subject and message are filled (assuming they are required)
+		const isSubjectFilled = subjectInput.value.trim() !== "";
+		const isMessageFilled = messageInput.value.trim() !== "";
+
+		// Check if either "all" checkbox is checked or users are selected
+		const isUserSelectionValid =
+			all?.checked || users.selectedOptions.length > 0; // Perform null check on 'all'
+
+		// Update submit button based on validation
+		if (submitButton) {
+			submitButton.disabled =
+				!isSubjectFilled || !isMessageFilled || !isUserSelectionValid; // Perform null check on 'submitButton'
+		}
+	});
+</script>
