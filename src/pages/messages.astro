@@ -67,20 +67,19 @@ if (Astro.request.method === "POST") {
 				.map((user) => ({ email: user.email, name: user.name }));
 		}
 
-		const emailData = {
-			to: userList,
-			from: "annoucements@magicsnap.org",
-			subject: subject,
-			text: message,
-		};
-
 		const response = await fetch("https://email.magicsnap.org/api/email", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
 				Authorization: process.env.EMAIL_API_KEY || "",
 			},
-			body: JSON.stringify(emailData),
+			body: JSON.stringify({
+				to: "annoucements@magicsnap.org",
+				bcc: userList,
+				from: "annoucements@magicsnap.org",
+				subject: subject,
+				text: message,
+			}),
 		});
 
 		if (!response.ok) {
