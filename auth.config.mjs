@@ -1,7 +1,7 @@
 import Slack from "@auth/core/providers/slack";
 import GitHub from "@auth/core/providers/github";
 import { defineConfig } from "auth-astro";
-import { db, like, User, Organization } from "astro:db";
+import { db, like, and, User, Organization } from "astro:db";
 
 export default defineConfig({
 	providers: [
@@ -17,8 +17,8 @@ export default defineConfig({
 					.select()
 					.from(User)
 					.where(
-						like(User.userId, profile["https://slack.com/user_id"]) &&
-							like(User.team, profile["https://slack.com/team_id"])
+						and(like(User.userId, profile["https://slack.com/user_id"])),
+						like(User.team, profile["https://slack.com/team_id"])
 					);
 
 				if (role.length === 0) {
