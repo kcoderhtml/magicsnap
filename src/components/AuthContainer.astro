@@ -90,7 +90,7 @@ type ExtendedSession = {
 				} else {
 					return (
 						<div class="signed-out-container">
-							<SignIn options={{ callbackUrl: "/dashboard" }}>
+							<SignIn provider="slack" options={{ callbackUrl: "/dashboard" }}>
 								Sign In
 							</SignIn>
 						</div>

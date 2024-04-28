@@ -91,7 +91,10 @@ if (session && session.user.role === "guest") {
 					</p>
 				</section>
 				<section class="signin-button">
-					<SignIn options={{ callbackUrl: `/join/${joinCode}` }}>
+					<SignIn
+						provider="slack"
+						options={{ callbackUrl: `/join/${joinCode}` }}
+					>
 						Connect your workspace
 					</SignIn>
 				</section>
@@ -109,7 +112,9 @@ if (session && session.user.role === "guest") {
 					</p>
 				</section>
 				<section class="signin-button">
-					<SignIn options={{ callbackUrl: `/dashboard` }}>Sign In</SignIn>
+					<SignIn provider="slack" options={{ callbackUrl: `/dashboard` }}>
+						Sign In
+					</SignIn>
 				</section>
 			</>
 		)
