@@ -2,6 +2,10 @@ import type { APIRoute } from "astro"
 import { db, User, Organization, Event } from "astro:db";
 
 export const POST: APIRoute = async ({ request }) => {
+    const endpointStart = new Date()
+    const continuePoint: [{ org: string, users: string[], completed: boolean }] = await request.json().catch(() => null);
+    let processed: [{ org: string, users: string[], completed: boolean }] = continuePoint || [];
+
     // get authorization header
     const auth = request.headers.get("Authorization")
 
@@ -23,26 +27,49 @@ export const POST: APIRoute = async ({ request }) => {
         console.log(`Found ${eventsHappeningToday.length} events happening in the next 24 hours`)
 
         for (const org of organizations) {
+            if (processed && processed.find((p) => p.org === org.team && p.completed)) {
+                console.log(`Skipping ${org.name} because it was already processed`)
+                continue
+            } else {
+                processed.push({ org: org.team, users: [], completed: false })
+            }
+
             const teamMembers = users.filter((u) => u.team === org.team)
             console.log(`Organization: ${org.name} has ${teamMembers.length} team members`)
 
             for (const member of teamMembers) {
-                console.log(`Member: ${member.name} (${member.email})`)
+                if (processed && processed.find((p) => p.org === org.team && p.users.includes(member.userId))) {
+                    console.log(`Skipping ${member.name} because they were already processed`)
+                    continue
+                } else if (new Date().getTime() - endpointStart.getTime() > 10000) {
+                    console.log(`Stopping at ${member.name} because it's been 10 seconds`)
+                    await fetch("https://worker-long-pine-89a7-callback.kieran-fdb.workers.dev/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: process.env.API_SECRET || "",
+                        },
+                        body: JSON.stringify(processed),
+                    });
+                    return new Response(JSON.stringify({
+                        ok: false, error: "Timeout", processed: processed
+                    }), { status: 408 })
+                } else {
+                    processed.find((p) => p.org === org.team)?.users.push(member.userId)
+                }
+
+                console.log(`Sending Email to ${member.role}: ${member.name} (${member.email})`)
 
                 // get all events that the user is going to
                 const eventsGoing = eventsHappeningToday.filter((e) => e.statusGoing.includes(member.userId))
-                console.log(`Found ${eventsGoing.length} events going`)
 
                 // get all events that the user is maybe going to
                 const eventsMaybe = eventsHappeningToday.filter((e) => e.statusMaybe.includes(member.userId))
-                console.log(`Found ${eventsMaybe.length} events maybe going`)
 
                 // get all events that the user is not going to
                 const eventsNotGoing = eventsHappeningToday.filter((e) => e.statusNotGoing.includes(member.userId))
-                console.log(`Found ${eventsNotGoing.length} events not going`)
 
                 // send email to user
-
                 const message = `Hey ${member.name},\nJust a friendly reminder about your schedule for tomorrow, ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}:`;
                 let emailMessage = message;
 
@@ -72,10 +99,8 @@ export const POST: APIRoute = async ({ request }) => {
                 emailMessage += "\n\n-----\n\n";
                 emailMessage += `*This email was sent by MagicSnap because you are a member of ${org.name}. If you have any questions or need assistance, please contact us at spellcheck@magicsnap.org.*`;
 
-
-
-                console.log(`Sending email to ${member.email}`)
-                console.log(emailMessage)
+                // console.log(emailMessage)
+                console.log(new Date().getTime() - endpointStart.getTime() + "ms")
                 const response = await fetch("https://email.magicsnap.org/api/email", {
                     method: "POST",
                     headers: {
@@ -89,16 +114,14 @@ export const POST: APIRoute = async ({ request }) => {
                         markdown: emailMessage,
                     }),
                 });
-
-                if (!response.ok) {
-                    console.error(`Failed to send email to ${member.email}`)
-                    console.error(await response.text())
-
-                    return new Response(JSON.stringify({
-                        ok: false, error: "Failed to send email"
-                    }), { status: 500 })
-                }
             }
+
+            const processedOrg = processed.find((p) => p.org === org.team);
+            if (processedOrg) {
+                processedOrg.completed = true;
+            }
+
+            console.log(`Processed ${org.name} ${new Date().getTime() - endpointStart.getTime() + "ms"}`)
         }
 
         return new Response(JSON.stringify({
