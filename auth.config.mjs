@@ -1,5 +1,4 @@
 import Slack from "@auth/core/providers/slack";
-import GitHub from "@auth/core/providers/github";
 import { defineConfig } from "auth-astro";
 import { db, like, and, User, Organization } from "astro:db";
 
@@ -76,71 +75,6 @@ export default defineConfig({
 					team: profile["https://slack.com/team_id"],
 					teamName: profile["https://slack.com/team_name"],
 					teamImage: profile["https://slack.com/team_image_230"],
-					role: role[0].role || "user",
-				};
-			},
-		}),
-		GitHub({
-			clientId: import.meta.env.GITHUB_CLIENT_ID,
-			clientSecret: import.meta.env.GITHUB_CLIENT_SECRET,
-			checks: ["pkce", "nonce"],
-			async profile(profile) {
-				profile.node_id = "github-" + profile.node_id;
-
-				const role = await db
-					.select()
-					.from(User)
-					.where(like(User.userId, profile.id));
-
-				if (role.length === 0) {
-					const users = await db
-						.select()
-						.from(User)
-						.where(like(User.team, profile.node_id));
-
-					const organizations = await db
-						.select()
-						.from(Organization)
-						.where(like(Organization.team, profile.node_id));
-
-					// check if the user is part of an organization in the db by checking if the team id is the same
-					if (organizations.map((org) => org.team).includes(profile.node_id)) {
-						if (users.length === 0) {
-							await db.insert(User).values({
-								userId: profile.id,
-								name: profile.name,
-								email: profile.email,
-								image: profile.avatar_url,
-								team: profile.node_id,
-								role: "admin",
-							});
-
-							role[0] = { role: "admin" };
-						} else {
-							await db.insert(User).values({
-								userId: profile.id,
-								name: profile.name,
-								email: profile.email,
-								image: profile.avatar_url,
-								team: profile.node_id,
-								role: "user",
-							});
-
-							role[0] = { role: "user" };
-						}
-					} else {
-						role[0] = { role: "guest" };
-					}
-				}
-
-				return {
-					id: profile.id,
-					name: profile.name,
-					email: profile.email,
-					image: profile.avatar_url,
-					team: profile.node_id,
-					teamName: profile.login,
-					teamImage: profile.avatar_url,
 					role: role[0].role || "user",
 				};
 			},
