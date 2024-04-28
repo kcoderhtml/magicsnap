@@ -43,21 +43,35 @@ if (!session) {
 	});
 }
 
-import { db, like, User } from "astro:db";
+import { db, like, and, User, Organization } from "astro:db";
 let users = await db.select().from(User).where(like(User.team, session.team));
 
-let error: { ok: boolean; message: string } = { ok: false, message: "" };
+import { Md5 } from "ts-md5";
+let error: { ok: boolean; message: string; confirm?: boolean } = {
+	ok: false,
+	message: "",
+};
+
+let {
+	subject = "",
+	message = "",
+	SendToUsers = [""],
+	confirm = false,
+	all = false,
+} = {};
 
 if (Astro.request.method === "POST") {
 	const data = await Astro.request.formData();
 	if (data.has("message") && session.user.role === "admin") {
-		const subject = data.get("subject") as string;
-		const message = data.get("message") as string;
-		const SendToUsers = data.getAll("users") as string[];
+		subject = data.get("subject") as string;
+		message = data.get("message") as string;
+		SendToUsers = data.getAll("users") as string[];
+		confirm = data.has("confirm");
+		all = data.has("all");
 
 		let userList = [];
 
-		if (data.has("all")) {
+		if (all) {
 			// get all users emails
 			userList = users.map((user) => ({ email: user.email, name: user.name }));
 		} else {
@@ -67,32 +81,72 @@ if (Astro.request.method === "POST") {
 				.map((user) => ({ email: user.email, name: user.name }));
 		}
 
-		const response = await fetch("https://email.magicsnap.org/api/email", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: process.env.EMAIL_API_KEY || "",
-			},
-			body: JSON.stringify({
-				to: "annoucements@magicsnap.org",
-				bcc: userList,
-				from: "annoucements@magicsnap.org",
-				subject: subject,
-				text: message,
-			}),
-		});
+		const email = {
+			to: "annoucements@magicsnap.org",
+			bcc: userList,
+			from: "annoucements@magicsnap.org",
+			subject: subject,
+			text: message,
+		};
 
-		if (!response.ok) {
+		const lastEmailHash = (
+			await db
+				.select()
+				.from(Organization)
+				.where(
+					and(
+						like(Organization.lastMessageHash, Md5.hashStr(email.text)),
+						like(Organization.team, session.team)
+					)
+				)
+		)[0];
+
+		if (lastEmailHash && !confirm) {
 			error = {
 				ok: false,
-				message: `Failed to send message to users. ${response.status} ${response.statusText}`,
+				message:
+					"It looks like you just sent this message. Are you sure you want to send it again?",
+				confirm: true,
 			};
-			console.log(response.status, response.statusText, await response.text());
 		} else {
-			error = {
-				ok: true,
-				message: `Message sent successfully to ${userList.length} users.`,
-			};
+			const response = await fetch("https://email.magicsnap.org/api/email", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: process.env.EMAIL_API_KEY || "",
+				},
+				body: JSON.stringify(email),
+			});
+
+			if (!response.ok) {
+				error = {
+					ok: false,
+					message: `Failed to send message to users. ${response.status} ${response.statusText}`,
+				};
+				console.log(
+					response.status,
+					response.statusText,
+					await response.text()
+				);
+			} else {
+				await db
+					.update(Organization)
+					.set({
+						lastMessageHash: Md5.hashStr(email.text),
+					})
+					.where(like(Organization.team, session.team));
+
+				subject = "";
+				message = "";
+				SendToUsers = [""];
+				confirm = false;
+				all = false;
+
+				error = {
+					ok: true,
+					message: `Message sent successfully to ${userList.length} users.`,
+				};
+			}
 		}
 	} else {
 		error = {
@@ -117,23 +171,43 @@ if (Astro.request.method === "POST") {
 		}
 		<form method="post">
 			<label for="subject">Subject</label>
-			<input type="text" id="subject" name="subject" required />
+			<input type="text" id="subject" name="subject" required value={subject} />
 			<label for="message">Message</label>
-			<textarea id="message" name="message" required></textarea>
+			<textarea id="message" name="message" required>{message}</textarea>
 			<select name="users" id="users" multiple>
-				{users.map((user) => <option value={user.userId}>{user.name}</option>)}
+				{
+					users.map((User) =>
+						SendToUsers.includes(User.userId) ? (
+							<option value={User.userId} selected>
+								{User.name}
+							</option>
+						) : (
+							<option value={User.userId}>{User.name}</option>
+						)
+					)
+				}
 			</select>
 
 			<div>
-				<input type="checkbox" id="all" name="all" value="all" />
+				<input type="checkbox" id="all" name="all" value="all" checked={all} />
 				<label for="all">Send to all users</label>
+
+				{
+					error.confirm && (
+						<>
+							<input type="checkbox" name="confirm" id="confirm" />
+							<label for="confirm">
+								Yes, I'm sure I want to send this message again.
+							</label>
+						</>
+					)
+				}
 			</div>
 
 			<button type="submit" name="message" disabled>Send</button>
 		</form>
 	</section>
 </Base>
-
 <style>
 	form {
 		display: flex;
