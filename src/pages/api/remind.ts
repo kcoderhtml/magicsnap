@@ -78,7 +78,7 @@ export const POST: APIRoute = async ({ request }) => {
                     },
                     body: JSON.stringify({
                         to: member.email,
-                        from: "events@magicsnap.org",
+                        from: "eventwizard@magicsnap.org",
                         subject: "Event Reminder for " + new Date().toDateString(),
                         markdown: emailMessage,
                     }),
