@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro"
-import { db, like, User, Organization, Event } from "astro:db";
+import { db, User, Organization, Event } from "astro:db";
 
 export const POST: APIRoute = async ({ request }) => {
     // get authorization header
@@ -66,6 +66,12 @@ export const POST: APIRoute = async ({ request }) => {
                 }
 
                 emailMessage += "\n\nDon't forget to stay organized and have a productive day!";
+
+                emailMessage += "\n\nAll the Best,  \nYour friendly neighborhood event reminder bot";
+
+                emailMessage += "\n\n-----\n\n";
+                emailMessage += `*This email was sent by MagicSnap because you are a member of ${org.name}. If you have any questions or need assistance, please contact us at spellcheck@magicsnap.org.*`;
+
 
 
                 console.log(`Sending email to ${member.email}`)
