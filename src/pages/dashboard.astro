@@ -13,6 +13,7 @@ type ExtendedSession = {
 	user: {
 		role: string;
 	};
+	newUser: boolean;
 };
 
 const session = (await getSession(Astro.request)) as Session & ExtendedSession;
@@ -193,6 +194,13 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 			} events
 		</p>
 	</section>
+	{
+		session.newUser && (
+			<section>
+				<p>Since you are a new user we recommend that you first fillout your allergies <a href="/settings">here</a> then come back and set your availability!</p>
+			</section>
+		)
+	}
 	{
 		session.user.role === "admin" && (
 			<section>
