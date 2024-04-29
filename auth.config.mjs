@@ -60,8 +60,20 @@ export default defineConfig({
 								channel: "signups",
 								event: "signup",
 								user_id: profile["https://slack.com/user_id"],
-								description: "User signed up",
+								description: "User signed up as an admin",
 								icon: "🚀",
+								tags: {
+									team: profile["https://slack.com/team_id"],
+									role: "admin",
+								},
+							});
+
+							await logsnag.track({
+								channel: "actions",
+								event: "joined_team",
+								user_id: profile["https://slack.com/user_id"],
+								description: "User joined a team",
+								icon: "🤝",
 								tags: {
 									team: profile["https://slack.com/team_id"],
 									role: "admin",
@@ -94,8 +106,20 @@ export default defineConfig({
 								channel: "signups",
 								event: "signup",
 								user_id: profile["https://slack.com/user_id"],
-								description: "User signed up",
+								description: "User signed up as a user",
 								icon: "🚀",
+								tags: {
+									team: profile["https://slack.com/team_id"],
+									role: "user",
+								},
+							});
+
+							await logsnag.track({
+								channel: "actions",
+								event: "joined_team",
+								user_id: profile["https://slack.com/user_id"],
+								description: "User joined a team",
+								icon: "🤝",
 								tags: {
 									team: profile["https://slack.com/team_id"],
 									role: "user",
@@ -117,6 +141,29 @@ export default defineConfig({
 						}
 					} else {
 						role[0] = { role: "guest" };
+
+						await logsnag.track({
+							channel: "signups",
+							event: "signup",
+							user_id: profile["https://slack.com/user_id"],
+							description: "User signed up as a guest",
+							icon: "🚀",
+							tags: {
+								team: profile["https://slack.com/team_id"],
+								role: "guest",
+							},
+						});
+
+						await logsnag.identify({
+							user_id: profile["https://slack.com/user_id"],
+							properties: {
+								email: profile.email,
+								name: profile.name,
+								image: profile.picture,
+								team: profile["https://slack.com/team_id"],
+								role: "guest",
+							},
+						});
 					}
 				}
 
