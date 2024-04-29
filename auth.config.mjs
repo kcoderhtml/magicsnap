@@ -91,7 +91,7 @@ export default defineConfig({
 								},
 							});
 
-							role[0] = { role: "admin" };
+							role[0].role = "admin";
 						} else {
 							await db.insert(User).values({
 								userId: profile["https://slack.com/user_id"],
@@ -137,10 +137,10 @@ export default defineConfig({
 								},
 							});
 
-							role[0] = { role: "user" };
+							role[0].role = "user";
 						}
 					} else {
-						role[0] = { role: "guest" };
+						role[0].role = "guest";
 
 						await logsnag.track({
 							channel: "signups",
@@ -175,7 +175,8 @@ export default defineConfig({
 					team: profile["https://slack.com/team_id"],
 					teamName: profile["https://slack.com/team_name"],
 					teamImage: profile["https://slack.com/team_image_230"],
-					role: role[0].role || "user",
+					role: role[0].role || "guest",
+					allergies: role[0].allergies || "",
 				};
 			},
 		}),
@@ -189,6 +190,7 @@ export default defineConfig({
 				token.teamImage = user.teamImage;
 				token.role = user.role;
 				token.id = user.id;
+				token.allergies = user.allergies;
 			}
 			return token;
 		},
@@ -200,6 +202,7 @@ export default defineConfig({
 				session.teamImage = token.teamImage;
 				session.user.role = token.role;
 				session.user.id = token.id;
+				session.user.allergies = token.allergies;
 			}
 			return session;
 		},
