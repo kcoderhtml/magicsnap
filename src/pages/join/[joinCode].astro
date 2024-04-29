@@ -73,29 +73,29 @@ if (!team) {
 }
 
 if (session && session.user.role === "guest") {
-	// await db.delete(Invite).where(like(Invite.verificationCode, joinCode));
-	// await db.insert(Organization).values({
-	// 	team: session.team,
-	// 	name: session.teamName,
-	// 	image: session.teamImage,
-	// });
-	// await db.insert(Event).values({
-	// 	name: "Welcome to MagicSnap! 🎉",
-	// 	date: new Date(Date.now() + 1000 * 60 * 60 * 2),
-	// 	team: session.team,
-	// 	comments: "A default event created by workspace connection",
-	// 	location: "MagicSnap",
-	// 	statusGoing: session.user.id,
-	// 	statusNotGoing: "",
-	// 	statusMaybe: "",
-	// });
-	// await logsnag.track({
-	// 	channel: "join-code",
-	// 	event: "create-team",
-	// 	icon: "🪄",
-	// 	user_id: session.user.id,
-	// 	notify: true,
-	// });
+	await db.delete(Invite).where(like(Invite.verificationCode, joinCode));
+	await db.insert(Organization).values({
+		team: session.team,
+		name: session.teamName,
+		image: session.teamImage,
+	});
+	await db.insert(Event).values({
+		name: "Welcome to MagicSnap! 🎉",
+		date: new Date(Date.now() + 1000 * 60 * 60 * 2),
+		team: session.team,
+		comments: "A default event created by workspace connection",
+		location: "MagicSnap",
+		statusGoing: session.user.id,
+		statusNotGoing: "",
+		statusMaybe: "",
+	});
+	await logsnag.track({
+		channel: "join-code",
+		event: "create-team",
+		icon: "🪄",
+		user_id: session.user.id,
+		notify: true,
+	});
 }
 ---
 
