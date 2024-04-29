@@ -85,7 +85,7 @@ if (session && session.user.role === "guest") {
 
 	await logsnag.track({
 		channel: "join-code",
-		event: "Successful Team Creation",
+		event: "create-team",
 		icon: "🪄",
 		user_id: session.user.id,
 		notify: true,
