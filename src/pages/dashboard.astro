@@ -124,6 +124,13 @@ if (Astro.request.method === "POST") {
 			const eventID = data.get("eventID") as string;
 
 			await db.delete(Event).where(like(Event.id, eventID));
+
+			await logsnag.track({
+				channel: "actions",
+				event: "event_delete",
+				icon: "📅",
+				user_id: session.user.id,
+			});
 		} 
 		else if (data.get("newEvent") != null) {
 			if (!data.has("name") || !data.has("date") || !data.has("time") || !data.has("location") || !data.has("comments")) {
@@ -149,6 +156,13 @@ if (Astro.request.method === "POST") {
 					.join(","),
 			};
 			await db.insert(Event).values(event);
+
+			await logsnag.track({
+				channel: "actions",
+				event: "event_create",
+				icon: "📅",
+				user_id: session.user.id,
+			});
 		}
 	} catch (error) {
 		if (error instanceof Error) {
