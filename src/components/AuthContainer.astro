@@ -47,6 +47,16 @@ type ExtendedSession = {
 									<a href="/settings" class="nav">
 										Settings
 									</a>
+									{
+										session.user.role == "admin" ? (
+											<>
+												/{" "}
+												<a href="/messages" class="nav">
+													Messages
+												</a>
+											</>
+										) : null
+									}
 								</nav>
 							</div>
 						</div>

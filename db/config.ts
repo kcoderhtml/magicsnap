@@ -5,6 +5,7 @@ const Organization = defineTable({
     team: column.text({ primaryKey: true }),
     name: column.text(),
     image: column.text(),
+    lastMessageHash: column.text({ optional: true, default: "" }),
   },
   indexes: {
     teamx: { on: ["team"], unique: true },
