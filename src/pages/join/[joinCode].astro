@@ -9,6 +9,13 @@ import { Invite } from "astro:db";
 import { like } from "astro:db";
 import { Organization } from "astro:db";
 
+import { LogSnag } from "logsnag";
+
+const logsnag = new LogSnag({
+	token: "f269dd8e8ec57f9a73737e76c5e0024a",
+	project: "magicsnap",
+});
+
 type ExtendedSession = {
 	team: string;
 	teamName: string;
@@ -74,6 +81,14 @@ if (session && session.user.role === "guest") {
 		team: session.team,
 		name: session.teamName,
 		image: session.teamImage,
+	});
+
+	await logsnag.track({
+		channel: "join-code",
+		event: "create-team",
+		icon: "🪄",
+		user_id: session.user.id,
+		notify: true,
 	});
 }
 ---

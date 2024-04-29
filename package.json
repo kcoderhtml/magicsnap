@@ -19,6 +19,7 @@
     "astro": "^4.5.10",
     "auth-astro": "^4.1.1",
     "jwt-decode": "^4.0.0",
+    "logsnag": "^1.0.0",
     "magick.css": "^1.0.5",
     "normalize.css": "^8.0.1",
     "prettier": "^3.2.5",

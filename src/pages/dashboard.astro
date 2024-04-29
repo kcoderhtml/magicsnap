@@ -44,6 +44,13 @@ if (!session) {
 	});
 }
 
+import { LogSnag } from "logsnag";
+
+const logsnag = new LogSnag({
+	token: "f269dd8e8ec57f9a73737e76c5e0024a",
+	project: "magicsnap",
+});
+
 import { db, Event, User } from "astro:db";
 import { like } from "astro:db";
 
@@ -102,6 +109,13 @@ if (Astro.request.method === "POST") {
 						statusNotGoing: statusNotGoing.join(","),
 					})
 					.where(like(Event.id, eventID));
+
+				await logsnag.track({
+					channel: "actions",
+					event: "event_status_change",
+					icon: "📅",
+					user_id: session.user.id,
+				});
 			}
 		} else if (data.get("delete") != null) {
 			if (session.user.role != "admin") {
@@ -110,6 +124,13 @@ if (Astro.request.method === "POST") {
 			const eventID = data.get("eventID") as string;
 
 			await db.delete(Event).where(like(Event.id, eventID));
+
+			await logsnag.track({
+				channel: "actions",
+				event: "event_delete",
+				icon: "📅",
+				user_id: session.user.id,
+			});
 		} 
 		else if (data.get("newEvent") != null) {
 			if (!data.has("name") || !data.has("date") || !data.has("time") || !data.has("location") || !data.has("comments")) {
@@ -135,6 +156,13 @@ if (Astro.request.method === "POST") {
 					.join(","),
 			};
 			await db.insert(Event).values(event);
+
+			await logsnag.track({
+				channel: "actions",
+				event: "event_create",
+				icon: "📅",
+				user_id: session.user.id,
+			});
 		}
 	} catch (error) {
 		if (error instanceof Error) {

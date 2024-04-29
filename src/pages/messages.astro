@@ -43,6 +43,13 @@ if (!session) {
 	});
 }
 
+import { LogSnag } from "logsnag";
+
+const logsnag = new LogSnag({
+	token: "f269dd8e8ec57f9a73737e76c5e0024a",
+	project: "magicsnap",
+});
+
 import { db, like, and, User, Organization } from "astro:db";
 let users = await db.select().from(User).where(like(User.team, session.team));
 
@@ -146,6 +153,13 @@ if (Astro.request.method === "POST") {
 					ok: true,
 					message: `Message sent successfully to ${userList.length} users.`,
 				};
+
+				await logsnag.track({
+					channel: "actions",
+					event: "message_sent",
+					icon: "📧",
+					user_id: session.user.id,
+				});
 			}
 		}
 	} else {

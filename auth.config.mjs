@@ -2,6 +2,13 @@ import Slack from "@auth/core/providers/slack";
 import { defineConfig } from "auth-astro";
 import { db, like, and, User, Organization } from "astro:db";
 
+import { LogSnag } from "logsnag";
+
+const logsnag = new LogSnag({
+	token: "f269dd8e8ec57f9a73737e76c5e0024a",
+	project: "magicsnap",
+});
+
 export default defineConfig({
 	providers: [
 		Slack({
@@ -49,6 +56,41 @@ export default defineConfig({
 								role: "admin",
 							});
 
+							await logsnag.track({
+								channel: "signups",
+								event: "signup",
+								user_id: profile["https://slack.com/user_id"],
+								description: "User signed up as an admin",
+								icon: "🚀",
+								tags: {
+									team: profile["https://slack.com/team_id"],
+									role: "admin",
+								},
+							});
+
+							await logsnag.track({
+								channel: "actions",
+								event: "joined_team",
+								user_id: profile["https://slack.com/user_id"],
+								description: "User joined a team",
+								icon: "🤝",
+								tags: {
+									team: profile["https://slack.com/team_id"],
+									role: "admin",
+								},
+							});
+
+							await logsnag.identify({
+								user_id: profile["https://slack.com/user_id"],
+								properties: {
+									email: profile.email,
+									name: profile.name,
+									image: profile.picture,
+									team: profile["https://slack.com/team_id"],
+									role: "admin",
+								},
+							});
+
 							role[0] = { role: "admin" };
 						} else {
 							await db.insert(User).values({
@@ -60,10 +102,68 @@ export default defineConfig({
 								role: "user",
 							});
 
+							await logsnag.track({
+								channel: "signups",
+								event: "signup",
+								user_id: profile["https://slack.com/user_id"],
+								description: "User signed up as a user",
+								icon: "🚀",
+								tags: {
+									team: profile["https://slack.com/team_id"],
+									role: "user",
+								},
+							});
+
+							await logsnag.track({
+								channel: "actions",
+								event: "joined_team",
+								user_id: profile["https://slack.com/user_id"],
+								description: "User joined a team",
+								icon: "🤝",
+								tags: {
+									team: profile["https://slack.com/team_id"],
+									role: "user",
+								},
+							});
+
+							await logsnag.identify({
+								user_id: profile["https://slack.com/user_id"],
+								properties: {
+									email: profile.email,
+									name: profile.name,
+									image: profile.picture,
+									team: profile["https://slack.com/team_id"],
+									role: "user",
+								},
+							});
+
 							role[0] = { role: "user" };
 						}
 					} else {
 						role[0] = { role: "guest" };
+
+						await logsnag.track({
+							channel: "signups",
+							event: "signup",
+							user_id: profile["https://slack.com/user_id"],
+							description: "User signed up as a guest",
+							icon: "🚀",
+							tags: {
+								team: profile["https://slack.com/team_id"],
+								role: "guest",
+							},
+						});
+
+						await logsnag.identify({
+							user_id: profile["https://slack.com/user_id"],
+							properties: {
+								email: profile.email,
+								name: profile.name,
+								image: profile.picture,
+								team: profile["https://slack.com/team_id"],
+								role: "guest",
+							},
+						});
 					}
 				}
 
