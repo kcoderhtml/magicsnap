@@ -44,6 +44,13 @@ if (!session) {
 	});
 }
 
+import { LogSnag } from "logsnag";
+
+const logsnag = new LogSnag({
+	token: process.env.LOGSNAG_TOKEN || "",
+	project: "magicsnap",
+});
+
 import { db, User } from "astro:db";
 import { like } from "astro:db";
 
@@ -55,6 +62,14 @@ if (Astro.request.method === "POST") {
 		const role = data.get("selected") as string;
 		if ((role === "admin" || role === "user" || role === "guest") && userId !== session.user.id) {
 			await db.update(User).set({ role }).where(like(User.userId, userId));
+
+			await logsnag.track({
+				channel: "actions",
+				event: "role_change",
+				description: `User ${session.user.name} changed the role of user ${userId} to ${role}`,
+				icon: "🛡️",
+				user_id: session.user.id,
+			});
 		} else {
 			error = "You cannot change your own role.";
 		}

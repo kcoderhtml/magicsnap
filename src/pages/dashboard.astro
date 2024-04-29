@@ -13,6 +13,7 @@ type ExtendedSession = {
 	user: {
 		role: string;
 	};
+	newUser: boolean;
 };
 
 const session = (await getSession(Astro.request)) as Session & ExtendedSession;
@@ -43,6 +44,13 @@ if (!session) {
 		}),
 	});
 }
+
+import { LogSnag } from "logsnag";
+
+const logsnag = new LogSnag({
+	token: process.env.LOGSNAG_TOKEN || "",
+	project: "magicsnap",
+});
 
 import { db, Event, User } from "astro:db";
 import { like } from "astro:db";
@@ -102,6 +110,13 @@ if (Astro.request.method === "POST") {
 						statusNotGoing: statusNotGoing.join(","),
 					})
 					.where(like(Event.id, eventID));
+
+				await logsnag.track({
+					channel: "actions",
+					event: "event_status_change",
+					icon: "📅",
+					user_id: session.user.id,
+				});
 			}
 		} else if (data.get("delete") != null) {
 			if (session.user.role != "admin") {
@@ -110,6 +125,13 @@ if (Astro.request.method === "POST") {
 			const eventID = data.get("eventID") as string;
 
 			await db.delete(Event).where(like(Event.id, eventID));
+
+			await logsnag.track({
+				channel: "actions",
+				event: "event_delete",
+				icon: "📅",
+				user_id: session.user.id,
+			});
 		} 
 		else if (data.get("newEvent") != null) {
 			if (!data.has("name") || !data.has("date") || !data.has("time") || !data.has("location") || !data.has("comments")) {
@@ -135,6 +157,13 @@ if (Astro.request.method === "POST") {
 					.join(","),
 			};
 			await db.insert(Event).values(event);
+
+			await logsnag.track({
+				channel: "actions",
+				event: "event_create",
+				icon: "📅",
+				user_id: session.user.id,
+			});
 		}
 	} catch (error) {
 		if (error instanceof Error) {
@@ -165,6 +194,13 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 			} events
 		</p>
 	</section>
+	{
+		session.newUser && (
+			<section>
+				<p>Since you are a new user we recommend that you first fillout your allergies <a href="/settings">here</a> then come back and set your availability!</p>
+			</section>
+		)
+	}
 	{
 		session.user.role === "admin" && (
 			<section>

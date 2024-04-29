@@ -2,6 +2,13 @@ import Slack from "@auth/core/providers/slack";
 import { defineConfig } from "auth-astro";
 import { db, like, and, User, Organization } from "astro:db";
 
+import { LogSnag } from "logsnag";
+
+const logsnag = new LogSnag({
+	token: process.env.LOGSNAG_TOKEN || "",
+	project: "magicsnap",
+});
+
 export default defineConfig({
 	providers: [
 		Slack({
@@ -9,6 +16,7 @@ export default defineConfig({
 			clientSecret: import.meta.env.SLACK_CLIENT_SECRET,
 			checks: ["pkce", "nonce"],
 			async profile(profile) {
+				let newUser = false;
 				profile["https://slack.com/team_id"] =
 					"slack-" + profile["https://slack.com/team_id"];
 
@@ -49,7 +57,43 @@ export default defineConfig({
 								role: "admin",
 							});
 
-							role[0] = { role: "admin" };
+							await logsnag.track({
+								channel: "signups",
+								event: "signup",
+								user_id: profile["https://slack.com/user_id"],
+								description: "User signed up as an admin",
+								icon: "🚀",
+								tags: {
+									team: profile["https://slack.com/team_id"],
+									role: "admin",
+								},
+							});
+
+							await logsnag.track({
+								channel: "actions",
+								event: "joined_team",
+								user_id: profile["https://slack.com/user_id"],
+								description: "User joined a team",
+								icon: "🤝",
+								tags: {
+									team: profile["https://slack.com/team_id"],
+									role: "admin",
+								},
+							});
+
+							await logsnag.identify({
+								user_id: profile["https://slack.com/user_id"],
+								properties: {
+									email: profile.email,
+									name: profile.name,
+									image: profile.picture,
+									team: profile["https://slack.com/team_id"],
+									role: "admin",
+								},
+							});
+
+							role[0].role = "admin";
+              newUser = true;
 						} else {
 							await db.insert(User).values({
 								userId: profile["https://slack.com/user_id"],
@@ -60,10 +104,69 @@ export default defineConfig({
 								role: "user",
 							});
 
-							role[0] = { role: "user" };
+							await logsnag.track({
+								channel: "signups",
+								event: "signup",
+								user_id: profile["https://slack.com/user_id"],
+								description: "User signed up as a user",
+								icon: "🚀",
+								tags: {
+									team: profile["https://slack.com/team_id"],
+									role: "user",
+								},
+							});
+
+							await logsnag.track({
+								channel: "actions",
+								event: "joined_team",
+								user_id: profile["https://slack.com/user_id"],
+								description: "User joined a team",
+								icon: "🤝",
+								tags: {
+									team: profile["https://slack.com/team_id"],
+									role: "user",
+								},
+							});
+
+							await logsnag.identify({
+								user_id: profile["https://slack.com/user_id"],
+								properties: {
+									email: profile.email,
+									name: profile.name,
+									image: profile.picture,
+									team: profile["https://slack.com/team_id"],
+									role: "user",
+								},
+							});
+
+							role[0].role = "user";
+              newUser = true;
 						}
 					} else {
-						role[0] = { role: "guest" };
+						role[0].role = "guest";
+
+						await logsnag.track({
+							channel: "signups",
+							event: "signup",
+							user_id: profile["https://slack.com/user_id"],
+							description: "User signed up as a guest",
+							icon: "🚀",
+							tags: {
+								team: profile["https://slack.com/team_id"],
+								role: "guest",
+							},
+						});
+
+						await logsnag.identify({
+							user_id: profile["https://slack.com/user_id"],
+							properties: {
+								email: profile.email,
+								name: profile.name,
+								image: profile.picture,
+								team: profile["https://slack.com/team_id"],
+								role: "guest",
+							},
+						});
 					}
 				}
 
@@ -75,7 +178,8 @@ export default defineConfig({
 					team: profile["https://slack.com/team_id"],
 					teamName: profile["https://slack.com/team_name"],
 					teamImage: profile["https://slack.com/team_image_230"],
-					role: role[0].role || "user",
+					role: role[0].role || "guest",
+          newUser: newUser,
 				};
 			},
 		}),
@@ -89,6 +193,7 @@ export default defineConfig({
 				token.teamImage = user.teamImage;
 				token.role = user.role;
 				token.id = user.id;
+				token.newUser = user.newUser;
 			}
 			return token;
 		},
@@ -100,6 +205,7 @@ export default defineConfig({
 				session.teamImage = token.teamImage;
 				session.user.role = token.role;
 				session.user.id = token.id;
+				session.newUser = token.newUser;
 			}
 			return session;
 		},
