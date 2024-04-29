@@ -5,7 +5,7 @@ import { db, like, and, User, Organization } from "astro:db";
 import { LogSnag } from "logsnag";
 
 const logsnag = new LogSnag({
-	token: "f269dd8e8ec57f9a73737e76c5e0024a",
+	token: process.env.LOGSNAG_TOKEN || "",
 	project: "magicsnap",
 });
 
@@ -91,7 +91,7 @@ export default defineConfig({
 								},
 							});
 
-							role[0] = { role: "admin" };
+							role[0].role = "admin";
 						} else {
 							await db.insert(User).values({
 								userId: profile["https://slack.com/user_id"],
@@ -137,10 +137,10 @@ export default defineConfig({
 								},
 							});
 
-							role[0] = { role: "user" };
+							role[0].role = "user";
 						}
 					} else {
-						role[0] = { role: "guest" };
+						role[0].role = "guest";
 
 						await logsnag.track({
 							channel: "signups",
@@ -175,7 +175,7 @@ export default defineConfig({
 					team: profile["https://slack.com/team_id"],
 					teamName: profile["https://slack.com/team_name"],
 					teamImage: profile["https://slack.com/team_image_230"],
-					role: role[0].role || "user",
+					role: role[0].role || "guest",
 				};
 			},
 		}),
