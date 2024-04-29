@@ -103,6 +103,7 @@ let users = await db.select().from(User).where(like(User.team, session.team));
 				<tr>
 					<th>Name</th>
 					<th>Email</th>
+					<th>Allergies</th>
 					<th>Image</th>
 					<th>Role</th>
 					{
@@ -114,10 +115,11 @@ let users = await db.select().from(User).where(like(User.team, session.team));
 			</thead>
 			<tbody>
 				{
-					users.map(({ userId, name, email, image, role }) => (
+					users.map(({ userId, name, email, image, role, allergies }) => (
 						<tr>
 							<td>{name}</td>
 							<td>{email || "N/A"}</td>
+							<td>{allergies}</td>
 							<td>
 								<img src=`${image}` alt="" class="profile-pic"/>
 							</td>

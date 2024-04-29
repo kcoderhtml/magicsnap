@@ -92,8 +92,8 @@ export default defineConfig({
 								},
 							});
 
-							role[0].role = "admin";
-              newUser = true;
+							role[0] = { role: "admin" };
+							newUser = true;
 						} else {
 							await db.insert(User).values({
 								userId: profile["https://slack.com/user_id"],
@@ -139,11 +139,11 @@ export default defineConfig({
 								},
 							});
 
-							role[0].role = "user";
-              newUser = true;
+							role[0] = { role: "user" };
+							newUser = true;
 						}
 					} else {
-						role[0].role = "guest";
+						role[0] = { role: "guest" };
 
 						await logsnag.track({
 							channel: "signups",
@@ -179,7 +179,7 @@ export default defineConfig({
 					teamName: profile["https://slack.com/team_name"],
 					teamImage: profile["https://slack.com/team_image_230"],
 					role: role[0].role || "guest",
-          newUser: newUser,
+					newUser: newUser,
 				};
 			},
 		}),
