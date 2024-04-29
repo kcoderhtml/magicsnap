@@ -1,47 +1,5 @@
-# Astro Starter Kit: Minimal
+# MagicSnap - A modern, easy to use, and open source team management software
 
-```sh
-npm create astro@latest -- --template minimal
-```
+MagicSnap was a project I started thinking about around December of 2023 when I joined a frc robotics team for the first time. My team was using teamsnap at the time but no one liked it, it was exceptionaly clunky, slow, and riddled with ads for the free tier. My goal became to make a better solution both to give my team a better solution and to have an interesting project to work on.  
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/minimal)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/minimal)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/minimal/devcontainer.json)
-
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
-
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
-
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
-
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
-
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+I've been working on this project for over 2 months of active development now and I'm quite proud of it. The main site is hosted on netlify with serverless functions providing access to astro db where all the data is stored for the team. Emails are provided by a cloudflare worker based off of [Sh4yy/cloudflare-email](https://github.com/Sh4yy/cloudflare-email) which can be found here [kcoderhtml/cloudflare-email](https://github.com/kcoderhtml/cloudflare-email). The site is written in astro and is fully typescript native.
