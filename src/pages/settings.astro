@@ -55,7 +55,6 @@ import { db, like, Organization, Event, User } from "astro:db";
 
 if (Astro.request.method === "POST") {
 	const data = await Astro.request.formData();
-	console.log(data);
 	if (data.has("updateName")) {
 		if (session.user.role === "admin") {
 			const name = data.get("name") as string;
