@@ -20,7 +20,7 @@ const User = defineTable({
     email: column.text(),
     image: column.text(),
     role: column.text(),
-    allergies: column.text({ optional: true }),
+    allergies: column.text({ optional: true, default: "please fill out" }),
   },
   indexes: {
     userIdx: { on: ["userId"], unique: true },
