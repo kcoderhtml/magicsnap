@@ -176,7 +176,6 @@ export default defineConfig({
 					teamName: profile["https://slack.com/team_name"],
 					teamImage: profile["https://slack.com/team_image_230"],
 					role: role[0].role || "guest",
-					allergies: role[0].allergies || "",
 				};
 			},
 		}),
@@ -190,7 +189,6 @@ export default defineConfig({
 				token.teamImage = user.teamImage;
 				token.role = user.role;
 				token.id = user.id;
-				token.allergies = user.allergies;
 			}
 			return token;
 		},
@@ -202,7 +200,6 @@ export default defineConfig({
 				session.teamImage = token.teamImage;
 				session.user.role = token.role;
 				session.user.id = token.id;
-				session.user.allergies = token.allergies;
 			}
 			return session;
 		},
