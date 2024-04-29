@@ -3,7 +3,7 @@ import { db, User, Organization, Event } from "astro:db";
 import { LogSnag } from "logsnag";
 
 const logsnag = new LogSnag({
-    token: "f269dd8e8ec57f9a73737e76c5e0024a",
+    token: process.env.LOGSNAG_TOKEN || "",
     project: "magicsnap",
 });
 
