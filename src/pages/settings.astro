@@ -42,6 +42,13 @@ if (!session) {
 	});
 }
 
+import { LogSnag } from "logsnag";
+
+const logsnag = new LogSnag({
+	token: "f269dd8e8ec57f9a73737e76c5e0024a",
+	project: "magicsnap",
+});
+
 let error = "";
 
 import { db, like, Organization, Event, User } from "astro:db";
@@ -54,6 +61,13 @@ if (Astro.request.method === "POST") {
 			.update(Organization)
 			.set({ name })
 			.where(like(Organization.team, session.team));
+
+		await logsnag.track({
+			channel: "actions",
+			event: "team_name_updated",
+			icon: "🏷️",
+			user_id: session.user.id,
+		});
 	} else {
 		error =
 			"You do not have the necessary permissions to update the team name.";
@@ -63,6 +77,14 @@ if (Astro.request.method === "POST") {
 		await db.delete(Organization).where(like(Organization.team, session.team));
 		await db.delete(Event).where(like(Event.team, session.team));
 		await db.delete(User).where(like(User.team, session.team));
+
+		await logsnag.track({
+			channel: "actions",
+			event: "team_deleted",
+			icon: "🗑️",
+			user_id: session.user.id,
+			notify: true,
+		});
 
 		return new Response(null, {
 			status: 302,
