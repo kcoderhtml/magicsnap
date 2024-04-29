@@ -73,30 +73,29 @@ if (!team) {
 }
 
 if (session && session.user.role === "guest") {
-	await db.delete(Invite).where(like(Invite.verificationCode, joinCode));
-	await db.insert(Organization).values({
-		team: session.team,
-		name: session.teamName,
-		image: session.teamImage,
-	});
-	await db.insert(Event).values({
-		name: "Welcome to MagicSnap! 🎉",
-		date: new Date(Date.now() + 1000 * 60 * 60 * 2),
-		team: session.team,
-		comments: "A default event created by workspace connection",
-		location: "MagicSnap",
-		statusGoing: session.user.id,
-		statusNotGoing: "",
-		statusMaybe: "",
-	});
-
-	await logsnag.track({
-		channel: "join-code",
-		event: "create-team",
-		icon: "🪄",
-		user_id: session.user.id,
-		notify: true,
-	});
+	// await db.delete(Invite).where(like(Invite.verificationCode, joinCode));
+	// await db.insert(Organization).values({
+	// 	team: session.team,
+	// 	name: session.teamName,
+	// 	image: session.teamImage,
+	// });
+	// await db.insert(Event).values({
+	// 	name: "Welcome to MagicSnap! 🎉",
+	// 	date: new Date(Date.now() + 1000 * 60 * 60 * 2),
+	// 	team: session.team,
+	// 	comments: "A default event created by workspace connection",
+	// 	location: "MagicSnap",
+	// 	statusGoing: session.user.id,
+	// 	statusNotGoing: "",
+	// 	statusMaybe: "",
+	// });
+	// await logsnag.track({
+	// 	channel: "join-code",
+	// 	event: "create-team",
+	// 	icon: "🪄",
+	// 	user_id: session.user.id,
+	// 	notify: true,
+	// });
 }
 ---
 
@@ -126,7 +125,7 @@ if (session && session.user.role === "guest") {
 	{
 		session && session.user.role === "guest" && (
 			<>
-				<section>
+				<section id="successful">
 					<p>
 						You have successfully connected your team {team.teamName} to
 						MagicSnap! You can now sign in to MagicSnap using your account and
@@ -142,6 +141,63 @@ if (session && session.user.role === "guest") {
 		)
 	}
 </Base>
+
+<script>
+	// @ts-ignore
+	import confetti from "canvas-confetti";
+
+	if (document.getElementById("successful")) {
+		await new Promise<void>((resolve) => {
+			setTimeout(() => {
+				resolve();
+			}, 100);
+		});
+
+		var count = 200;
+		var defaults = {
+			origin: { y: 0.7 },
+		};
+
+		function fire(
+			particleRatio: number,
+			opts: {
+				spread: number;
+				startVelocity?: number;
+				decay?: number;
+				scalar?: number;
+			}
+		) {
+			confetti({
+				...defaults,
+				...opts,
+				particleCount: Math.floor(count * particleRatio),
+			});
+		}
+
+		fire(0.25, {
+			spread: 26,
+			startVelocity: 55,
+		});
+		fire(0.2, {
+			spread: 60,
+		});
+		fire(0.35, {
+			spread: 100,
+			decay: 0.91,
+			scalar: 0.8,
+		});
+		fire(0.1, {
+			spread: 120,
+			startVelocity: 25,
+			decay: 0.92,
+			scalar: 1.2,
+		});
+		fire(0.1, {
+			spread: 120,
+			startVelocity: 45,
+		});
+	}
+</script>
 
 <style>
 	.signin-button {
