@@ -4,10 +4,7 @@ import { SignIn } from "auth-astro/components";
 
 import { getSession } from "auth-astro/server";
 import { type Session } from "@auth/core/types";
-import { db } from "astro:db";
-import { Invite } from "astro:db";
-import { like } from "astro:db";
-import { Organization } from "astro:db";
+import { db, like, Event, Invite, Organization } from "astro:db";
 
 import { LogSnag } from "logsnag";
 
@@ -81,6 +78,16 @@ if (session && session.user.role === "guest") {
 		team: session.team,
 		name: session.teamName,
 		image: session.teamImage,
+	});
+	await db.insert(Event).values({
+		name: "Welcome to MagicSnap! 🎉",
+		date: new Date(Date.now() + 1000 * 60 * 60 * 2),
+		team: session.team,
+		comments: "A default event created by workspace connection",
+		location: "MagicSnap",
+		statusGoing: session.user.id,
+		statusNotGoing: "",
+		statusMaybe: "",
 	});
 
 	await logsnag.track({
