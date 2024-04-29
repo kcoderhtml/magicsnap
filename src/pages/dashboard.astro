@@ -48,7 +48,7 @@ if (!session) {
 import { LogSnag } from "logsnag";
 
 const logsnag = new LogSnag({
-	token: "f269dd8e8ec57f9a73737e76c5e0024a",
+	token: process.env.LOGSNAG_TOKEN || "",
 	project: "magicsnap",
 });
 
@@ -351,12 +351,13 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 	.events {
 		text-align: center;
 		max-width: 76rem;
+		justify-content: center;
 	}
 
 	table {
 		border: 0.1rem solid #ddd;
 		table-layout: auto;
-		transform: translateX(calc((100% - 76rem) / -1.5));
+		transform: translateX(min(calc((100% - 76rem) / -1.5), 0px));
 	}
 
 	th,
@@ -367,7 +368,7 @@ const users = await db.select().from(User).where(like(User.team, session.team));
 		max-width: 20rem;
 	}
 
-	td:nth-of-type(7), th:nth-of-type(7) { max-width: fit-content; }
+	td:nth-of-type(7), th:nth-of-type(7) { max-width: fit-content; min-width: 7.5rem; }
 
 	.events table th {
 		text-align: left;
