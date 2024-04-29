@@ -16,6 +16,7 @@ export default defineConfig({
 			clientSecret: import.meta.env.SLACK_CLIENT_SECRET,
 			checks: ["pkce", "nonce"],
 			async profile(profile) {
+				let newUser = false;
 				profile["https://slack.com/team_id"] =
 					"slack-" + profile["https://slack.com/team_id"];
 
@@ -92,6 +93,7 @@ export default defineConfig({
 							});
 
 							role[0].role = "admin";
+              newUser = true;
 						} else {
 							await db.insert(User).values({
 								userId: profile["https://slack.com/user_id"],
@@ -138,6 +140,7 @@ export default defineConfig({
 							});
 
 							role[0].role = "user";
+              newUser = true;
 						}
 					} else {
 						role[0].role = "guest";
@@ -176,6 +179,7 @@ export default defineConfig({
 					teamName: profile["https://slack.com/team_name"],
 					teamImage: profile["https://slack.com/team_image_230"],
 					role: role[0].role || "guest",
+          newUser: newUser,
 				};
 			},
 		}),
@@ -189,6 +193,7 @@ export default defineConfig({
 				token.teamImage = user.teamImage;
 				token.role = user.role;
 				token.id = user.id;
+				token.newUser = user.newUser;
 			}
 			return token;
 		},
@@ -200,6 +205,7 @@ export default defineConfig({
 				session.teamImage = token.teamImage;
 				session.user.role = token.role;
 				session.user.id = token.id;
+				session.newUser = token.newUser;
 			}
 			return session;
 		},
