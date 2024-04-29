@@ -55,45 +55,76 @@ import { db, like, Organization, Event, User } from "astro:db";
 
 if (Astro.request.method === "POST") {
 	const data = await Astro.request.formData();
-	if (data.has("updateName") && session.user.role === "admin") {
-		const name = data.get("name") as string;
+	console.log(data);
+	if (data.has("updateName")) {
+		if (session.user.role === "admin") {
+			const name = data.get("name") as string;
+			await db
+				.update(Organization)
+				.set({ name })
+				.where(like(Organization.team, session.team));
+
+			await logsnag.track({
+				channel: "actions",
+				event: "team_name_updated",
+				icon: "🏷️",
+				user_id: session.user.id,
+			});
+		} else {
+			error =
+				"You do not have the necessary permissions to update the team name.";
+		}
+	} else if (data.has("delete")) {
+		if (session.user.role === "admin") {
+			await db
+				.delete(Organization)
+				.where(like(Organization.team, session.team));
+			await db.delete(Event).where(like(Event.team, session.team));
+			await db.delete(User).where(like(User.team, session.team));
+
+			await logsnag.track({
+				channel: "actions",
+				event: "team_deleted",
+				icon: "🗑️",
+				user_id: session.user.id,
+				notify: true,
+			});
+
+			return new Response(null, {
+				status: 302,
+				headers: new Headers({
+					Location: "/signout",
+				}),
+			});
+		} else {
+			error = "You do not have the necessary permissions to delete the team.";
+		}
+	} else if (data.has("updateEmail")) {
+		const email = data.get("email") as string;
 		await db
-			.update(Organization)
-			.set({ name })
-			.where(like(Organization.team, session.team));
+			.update(User)
+			.set({ email })
+			.where(like(User.userId, session.user.id));
 
 		await logsnag.track({
 			channel: "actions",
-			event: "team_name_updated",
-			icon: "🏷️",
+			event: "email_updated",
+			icon: "📧",
 			user_id: session.user.id,
 		});
-	} else {
-		error =
-			"You do not have the necessary permissions to update the team name.";
-	}
-
-	if (data.has("delete") && session.user.role === "admin") {
-		await db.delete(Organization).where(like(Organization.team, session.team));
-		await db.delete(Event).where(like(Event.team, session.team));
-		await db.delete(User).where(like(User.team, session.team));
+	} else if (data.has("updateAllergies")) {
+		const allergies = data.get("allergies") as string;
+		await db
+			.update(User)
+			.set({ allergies })
+			.where(like(User.userId, session.user.id));
 
 		await logsnag.track({
 			channel: "actions",
-			event: "team_deleted",
-			icon: "🗑️",
+			event: "allergies_updated",
+			icon: "🥜",
 			user_id: session.user.id,
-			notify: true,
 		});
-
-		return new Response(null, {
-			status: 302,
-			headers: new Headers({
-				Location: "/signout",
-			}),
-		});
-	} else {
-		error = "You do not have the necessary permissions to delete the team.";
 	}
 }
 
@@ -102,6 +133,10 @@ const team = (
 		.select()
 		.from(Organization)
 		.where(like(Organization.team, session.team))
+)[0];
+
+const user = (
+	await db.select().from(User).where(like(User.userId, session.user.id))
 )[0];
 ---
 
@@ -120,6 +155,58 @@ const team = (
 		}
 
 		<div class="settings-container">
+			<h1>Personal Settings</h1>
+			<form method="post">
+				<input
+					type="text"
+					name="name"
+					value={user.name}
+					data-value={user.name}
+				/>
+
+				<button type="submit" name="updateName" disabled>Update Name</button>
+
+				<label for="update"
+					>This will update your name. This <b>will not</b> update your workspace
+					name.</label
+				>
+			</form>
+
+			<form method="post">
+				<input
+					type="email"
+					name="email"
+					value={user.email}
+					data-value={user.email}
+				/>
+
+				<button type="submit" name="updateEmail" disabled>Update Email</button>
+
+				<label for="update"
+					>This will update your email. This <b>will not</b> update your workspace
+					email.</label
+				>
+			</form>
+
+			<form method="post">
+				<input
+					type="text"
+					name="allergies"
+					value={user.allergies}
+					data-value={user.allergies}
+				/>
+
+				<button type="submit" name="updateAllergies" disabled
+					>Update Allergies</button
+				>
+
+				<label for="update"
+					>This will update your allergies so your team leaders can keep you
+					safe</label
+				>
+			</form>
+
+			<h1>Team Settings</h1>
 			<form method="post">
 				<button type="submit" name="delete">Delete Team</button>
 				<label for="delete"
