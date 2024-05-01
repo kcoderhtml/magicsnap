@@ -1,0 +1,158 @@
+---
+import Base from "../../../../Layouts/Base.astro";
+import ThreeWayToggle from "../../../../components/ThreeWayToggle.astro";
+
+import { LogSnag } from "logsnag";
+import { db, like, and, Event, User } from "astro:db";
+
+const logsnag = new LogSnag({
+	token: process.env.LOGSNAG_TOKEN || "",
+	project: "magicsnap",
+});
+
+const { team, eventID, userID } = Astro.params as {
+	team: string;
+	eventID: string;
+	userID: string;
+};
+
+const user = (
+	await db
+		.select()
+		.from(User)
+		.where(and(like(User.team, team), like(User.userId, userID)))
+		.all()
+)[0];
+
+const hash = Astro.url.searchParams.get("hash");
+
+if (Astro.request.method === "POST" && user && hash === user.hash) {
+	try {
+		const data = await Astro.request.formData();
+
+		if (data.get("availability") != null) {
+			const eventID = data.get("eventID") as string;
+			const status = data.get("selected") as string;
+
+			const event = (
+				await db.select().from(Event).where(like(Event.id, eventID))
+			)?.[0];
+
+			if (event) {
+				let statusGoing = event.statusGoing
+					.split(",")
+					.filter((id) => id !== "");
+				let statusMaybe = event.statusMaybe
+					.split(",")
+					.filter((id) => id !== "");
+				let statusNotGoing = event.statusNotGoing
+					.split(",")
+					.filter((id) => id !== "");
+
+				const currentStatus = statusGoing.includes(user.userId)
+					? "yes"
+					: statusMaybe.includes(user.userId)
+						? "maybe"
+						: "no";
+
+				if (currentStatus !== status) {
+					if (status === "yes") {
+						statusGoing.push(user.userId);
+						statusMaybe = statusMaybe.filter((id) => id !== user.userId);
+						statusNotGoing = statusNotGoing.filter((id) => id !== user.userId);
+					} else if (status === "maybe") {
+						statusMaybe.push(user.userId);
+						statusGoing = statusGoing.filter((id) => id !== user.userId);
+						statusNotGoing = statusNotGoing.filter((id) => id !== user.userId);
+					} else if (status === "no" && currentStatus !== "no") {
+						statusNotGoing.push(user.userId);
+						statusGoing = statusGoing.filter((id) => id !== user.userId);
+						statusMaybe = statusMaybe.filter((id) => id !== user.userId);
+					}
+				}
+
+				await db
+					.update(Event)
+					.set({
+						statusGoing: statusGoing.join(","),
+						statusMaybe: statusMaybe.join(","),
+						statusNotGoing: statusNotGoing.join(","),
+					})
+					.where(like(Event.id, eventID));
+
+				await logsnag.track({
+					channel: "actions",
+					event: "event_status_change",
+					icon: "📅",
+					user_id: user.userId,
+				});
+			}
+		}
+	} catch (error) {
+		if (error instanceof Error) {
+			await logsnag.track({
+				channel: "errors",
+				event: "event_status_change_error",
+				icon: "📅",
+				user_id: user.userId,
+				tags: {
+					error: error.message,
+				},
+			});
+		}
+	}
+}
+
+const event = (
+	await db
+		.select()
+		.from(Event)
+		.where(and(like(Event.team, team), like(Event.id, eventID)))
+		.all()
+)[0];
+---
+
+<Base title="Update Your Availability">
+	<section class="event">
+		{user && user.hash === hash && event && (
+			<h2>{event.name}</h2>
+			<p>
+				{event.name} is being held at {event.location} on {
+					event.date.toLocaleDateString() +
+						" at " +
+						event.date.toLocaleTimeString([], {
+							hour: "numeric",
+							minute: "2-digit",
+						})
+				}
+			</p>
+			<p>{event.comments}</p>
+			<h3>Are you going?</h3>
+			<section class="availability-container">
+				<ThreeWayToggle
+					eventID=`${event.id}`
+					selected=`${event.statusGoing?.includes(userID) ? "yes" : event.statusMaybe?.includes(userID) ? "maybe" : "no"}`
+				/>
+			</section>
+		)}
+		{!user && <p>Sorry, we couldn't find your user account.</p>}
+		{user && user.hash !== hash && <p>Sorry, the link you used is invalid.</p>}
+		{!event && <p>Sorry, we couldn't find the event you're looking for.</p>}
+	</section>
+</Base>
+
+<style>
+	.event {
+		text-align: center;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+	.availability-container {
+		display: flex;
+		flex-direction: column;
+		border: 1px solid #ccc;
+		width: fit-content;
+		padding-left: 4rem;
+	}
+</style>
