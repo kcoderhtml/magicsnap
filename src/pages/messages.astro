@@ -88,12 +88,15 @@ if (Astro.request.method === "POST") {
 				.map((user) => ({ email: user.email, name: user.name }));
 		}
 
+		message += "  \n\n-----\n\n";
+		message += `*This email was sent by MagicSnap because you are a member of ${session.teamName}. If you have any questions or need assistance, please contact us at spellcheck@magicsnap.org.*`;
+
 		const email = {
 			to: "annoucements@magicsnap.org",
 			bcc: userList,
 			from: "magic.broadcast@magicsnap.org",
 			subject: subject,
-			text: message,
+			markdown: message,
 		};
 
 		const lastEmailHash = (
@@ -102,7 +105,7 @@ if (Astro.request.method === "POST") {
 				.from(Organization)
 				.where(
 					and(
-						like(Organization.lastMessageHash, Md5.hashStr(email.text)),
+						like(Organization.lastMessageHash, Md5.hashStr(email.markdown)),
 						like(Organization.team, session.team)
 					)
 				)
@@ -139,7 +142,7 @@ if (Astro.request.method === "POST") {
 				await db
 					.update(Organization)
 					.set({
-						lastMessageHash: Md5.hashStr(email.text),
+						lastMessageHash: Md5.hashStr(email.markdown),
 					})
 					.where(like(Organization.team, session.team));
 

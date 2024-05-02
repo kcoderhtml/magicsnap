@@ -9,6 +9,17 @@ const logsnag = new LogSnag({
 	project: "magicsnap",
 });
 
+function generateRandomString() {
+	const chars =
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+	let result = "";
+	for (let i = 0; i < 16; i++) {
+		const randomIndex = Math.floor(Math.random() * chars.length);
+		result += chars.charAt(randomIndex);
+	}
+	return result;
+}
+
 export default defineConfig({
 	providers: [
 		Slack({
@@ -50,6 +61,7 @@ export default defineConfig({
 						if (users.length === 0) {
 							await db.insert(User).values({
 								userId: profile["https://slack.com/user_id"],
+								hash: generateRandomString(),
 								name: profile.name,
 								email: profile.email,
 								image: profile.picture,
@@ -97,6 +109,7 @@ export default defineConfig({
 						} else {
 							await db.insert(User).values({
 								userId: profile["https://slack.com/user_id"],
+								hash: generateRandomString(),
 								name: profile.name,
 								email: profile.email,
 								image: profile.picture,

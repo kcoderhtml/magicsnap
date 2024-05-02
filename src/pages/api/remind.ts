@@ -1,11 +1,5 @@
 import type { APIRoute } from "astro"
 import { db, User, Organization, Event } from "astro:db";
-import { LogSnag } from "logsnag";
-
-const logsnag = new LogSnag({
-    token: process.env.LOGSNAG_TOKEN || "",
-    project: "magicsnap",
-});
 
 export const POST: APIRoute = async ({ request }) => {
     // get authorization header
@@ -25,13 +19,6 @@ export const POST: APIRoute = async ({ request }) => {
             const diffHours = diff / (1000 * 60 * 60)
             return diffHours < 24 && diffHours > 0
         })
-
-        await logsnag.track({
-            channel: "api",
-            event: "reminder-sent",
-            description: `Sent reminder to ${users.length} users in ${organizations.length} different organizations about ${eventsHappeningToday.length} events happening today`,
-            icon: "📬",
-        });
 
         return new Response(JSON.stringify({
             ok: true, eventsHappeningToday: eventsHappeningToday, users: users, organizations: organizations
