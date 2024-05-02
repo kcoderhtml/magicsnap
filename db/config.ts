@@ -15,6 +15,7 @@ const Organization = defineTable({
 const User = defineTable({
   columns: {
     userId: column.text({ primaryKey: true }),
+    hash: column.text(),
     team: column.text(),
     name: column.text(),
     email: column.text(),
