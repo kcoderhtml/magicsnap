@@ -1,5 +1,16 @@
 import { defineDb, defineTable, column } from "astro:db";
 
+function generateRandomString() {
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < 16; i++) {
+    const randomIndex = Math.floor(Math.random() * chars.length);
+    result += chars.charAt(randomIndex);
+  }
+  return result;
+}
+
 const Organization = defineTable({
   columns: {
     team: column.text({ primaryKey: true }),
@@ -15,7 +26,7 @@ const Organization = defineTable({
 const User = defineTable({
   columns: {
     userId: column.text({ primaryKey: true }),
-    hash: column.text(),
+    hash: column.text({ default: generateRandomString() }),
     team: column.text(),
     name: column.text(),
     email: column.text(),
