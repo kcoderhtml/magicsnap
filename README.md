@@ -35,4 +35,5 @@ I included screenshots of all the dashboard pages below
 
 ## License
 
-This repositories code is licensed with the AGPL-3.0 license and you can view it [here](/LICENSE.md)
+_© 2024 Kieran Klukas_  
+_Licensed under [AGPL 3.0](LICENSE.md)_  
