@@ -10,7 +10,7 @@
 
 ## About
 
-> [!WARNING] Unmaintained Warning
+> [!WARNING]
 > This repo is pretty much unmaintained so use the code at your own risk :)
 > If you have issues I can do my best to help but I don't have a ton of motivation to work on this anymore.
 > Astro Studio and Cloudflare email through mailchannels has also been depreciated
