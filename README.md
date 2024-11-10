@@ -1,9 +1,12 @@
 # MagicSnap
 
-<figure align="center">
+<p align="center">
   <img src="https://raw.githubusercontent.com/kcoderhtml/magicsnap/refs/heads/main/public/android-chrome-512x512.png" alt="screenshot of the website"/>
-  <figcaption><i>A modern, easy to use, and open source team management software</i></figcaption>
-</figure>
+</p>
+
+<p align="center">
+  A modern, easy to use, and open source team management software
+</p>
 
 ## About
 
