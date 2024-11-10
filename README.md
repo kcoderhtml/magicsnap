@@ -35,5 +35,4 @@ I included screenshots of all the dashboard pages below
 
 ## License
 
-_© 2024 Kieran Klukas_  
-_Licensed under [AGPL 3.0](LICENSE.md)_  
+_© 2024 Kieran Klukas - Licensed under [AGPL 3.0](LICENSE.md)_  
